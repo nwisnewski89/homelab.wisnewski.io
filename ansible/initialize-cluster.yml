@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: yes
+  roles:     
+    - role: install-microk8s
+    - role: open-ports
+    - role: worker-join-cluster
+
+
+    

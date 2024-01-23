@@ -1,0 +1,5 @@
+[control-plane]
+black-phillip.local fqdn=black-phillip.homelab.wisnewski.io
+[worker-nodes]
+rainbow-ralph.local fqdn=rainbow-ralph.homelab.wisnewski.io dns_server_type=primary
+silver-boi.local fqdn=silver-boi.homelab.wisnewski.io dns_server_type=secondary

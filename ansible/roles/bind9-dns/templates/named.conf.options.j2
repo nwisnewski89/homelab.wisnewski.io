@@ -1,0 +1,20 @@
+acl "trusted" {
+        {{ rainbow_ralph }};    
+        {{ silver_boi }};    
+        {{ black_phillip }};  
+        {{ macbook }};  
+};
+
+options {
+        directory "/var/cache/bind";
+        
+        recursion yes;                 
+        allow-recursion { trusted; };  
+        listen-on { {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}; };   
+        allow-transfer { none; };      
+
+        forwarders {
+                8.8.8.8;
+                1.1.1.1;
+        };
+};

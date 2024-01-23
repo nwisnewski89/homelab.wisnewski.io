@@ -1,0 +1,6 @@
+--- 
+- name: Copy netplan
+  ansible.builtin.template:
+    src: 00-private-nameservers.yaml.j2
+    dest: /etc/netplan/00-private-nameservers.yaml
+

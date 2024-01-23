@@ -1,0 +1,23 @@
+- hosts: control-plane
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: Enabled microK8s addons
+      ansible.builtin.shell:
+        cmd: |
+          microk8s enable {{ item }}
+      loop:
+        - cert-manager
+        - dns
+        - dashboard
+        - ingress
+        - registry
+        - community
+        - host-access
+        - storage
+
+    - name: Generate config
+      ansible.builtin.shell:
+        cmd: microk8s kubectl config view --raw > ~/.kube/microk8s-config
+
+    

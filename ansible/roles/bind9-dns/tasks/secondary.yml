@@ -1,0 +1,5 @@
+---
+- name: Copy named.conf.options
+  ansible.builtin.template:
+    src: named.conf.options.j2
+    dest: /etc/bind/named.conf.options

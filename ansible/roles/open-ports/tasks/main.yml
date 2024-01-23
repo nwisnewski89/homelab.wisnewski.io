@@ -1,0 +1,17 @@
+---
+- name: Open all tcp ports to homelab
+  community.general.ufw:
+    rule: allow
+    proto: tcp
+    src: "{{ network_cidr }}"
+    from_port: 1
+    to_port: 25000
+
+- name: Open microK8s udp ports
+  community.general.ufw:
+    rule: allow
+    proto: udp 
+    src: "{{ network_cidr }}"
+    port: 4789
+
+

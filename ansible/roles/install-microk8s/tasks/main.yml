@@ -1,0 +1,68 @@
+---
+- name: Install aptitude
+  ansible.builtin.apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
+- name: Set homelab fqdn in ect hosts
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} {{ hostvars[inventory_hostname]['fqdn'] }}"
+
+- name: Set a hostname to homelab
+  ansible.builtin.hostname:
+    name: "{{ hostvars[inventory_hostname]['fqdn'] }}"
+
+- name: Set etc hosts on control-plane server
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ hostvars[groups['worker-nodes'][item]]['ansible_default_ipv4']['address'] }} {{ hostvars[groups['worker-nodes'][item]]['fqdn'] }}"
+  when: "group_names[0] == 'control-plane'"
+  loop:
+    - 0
+    - 1
+
+- name: Install general utilities
+  ansible.builtin.apt:
+    name:
+      - linux-modules-extra-raspi
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - dnsutils 
+      - net-tools
+      - nmap 
+      - traceroute 
+      - netcat 
+      - python3
+      - python3-pip
+    state: latest
+    update_cache: true
+
+- name: Install docker on controller node
+  ansible.builtin.import_tasks:
+    file: install-docker.yml
+  when: "group_names[0] == 'control-plane'"
+
+- name: Edit boot file
+  ansible.builtin.lineinfile:
+    path: /boot/firmware/cmdline.txt
+    line: cgroup_enable=memory cgroup_memory=1
+
+- name: Check if microK8s is installed
+  ansible.builtin.shell:
+    cmd: microk8s version
+  register: microk8s_check
+  ignore_errors: True
+  
+- name: Reboot and wait for restart
+  ansible.builtin.reboot:
+    reboot_timeout: 3600
+  when: microk8s_check.rc != 0
+
+- name: Install microK8s
+  ansible.builtin.shell:
+    cmd: snap install microk8s --classic --channel=1.25
+  when: microk8s_check.rc != 0

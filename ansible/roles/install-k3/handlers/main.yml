@@ -1,0 +1,14 @@
+---
+- name: Restart k3s
+  ansible.builtin.service:
+    name: k3s
+    state: restarted
+    daemon_reload: yes
+  when: inventory_hostname in groups['api-server']
+
+- name: Restart k3s on worker nodes
+  ansible.builtin.service:
+    name: k3s-agent
+    state: restarted
+    daemon_reload: yes
+  when: inventory_hostname in groups['worker-nodes']

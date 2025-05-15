@@ -1,5 +1,10 @@
-[control-plane]
-black-phillip.local fqdn=black-phillip.homelab.wisnewski.io
+[kluster:children]
+api-server
+worker-nodes
+
+[api-server]
+silver-boi.local 
+
 [worker-nodes]
-rainbow-ralph.local fqdn=rainbow-ralph.homelab.wisnewski.io dns_server_type=primary
-silver-boi.local fqdn=silver-boi.homelab.wisnewski.io dns_server_type=secondary
+rainbow-ralph.local
+black-phillip.local

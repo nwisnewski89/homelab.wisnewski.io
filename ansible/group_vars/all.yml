@@ -1,3 +1,8 @@
 ansible_user: nicholaswisnewski
-network_cidr: "{{ lookup('ansible.builtin.env', 'NETWORK_CIDR') }}"
-dns_zone_name: homelab.wisnewski.io
+aws_region: "{{ lookup('ansible.builtin.env', 'AWS_REGION') }}"
+ghcr_token: "{{ lookup('ansible.builtin.env', 'GHCR_TOKEN') }}"
+k3s_token: "{{ lookup('ansible.builtin.env', 'K3S_TOKEN') }}"
+etcd_backups_access_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_ACCESS_KEY') }}"
+etcd_backups_secret_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_SECRET_KEY') }}"
+etcd_backups_bucket_name: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_BUCKET_NAME') }}"
+my_macbook_ip: "{{ lookup('ansible.builtin.env', 'MY_MACBOOK_IP') }}"

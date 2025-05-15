@@ -1,23 +1,42 @@
 # Homelab Set Up
-3 Raspberry Pi 4 4GB Running Ubuntu Server 22.04.3 64-bit LTS
 
-![homelab](./images/homelab.png)
+- 3 Raspberry Pi 4 8GB Running Ubuntu Server 24.04.2 64-bit LTS
 
-## Configure firewall on each server
-* `sudo ufw allow from {network_cidr} proto tcp to any port 22`
-* `sudo ufw default deny incoming`
-* `sudo ufw default allow outgoing`
 
-## Run configure internal domain homelab.wisnewski.io
-* `ansible-playbook -i inventory configure-dns-servers.yml`
-* `ansible-playbook -i inventory configure-netplan.yml`
-    * on each host run:
-        * `sudo netplan apply`
-        * `sudo resolvectl status`
-* Configure router with custom DNS server
+1. Deploy AWS DNS and S3 backups:
+```
+cd terraform/aws-resources
+    terraform init
+    terraform plan
+    terraform apply --auto-approve
+```
+2. Set ansible environment variables:
+```
+    AWS_REGION=""
+    GHCR_TOKEN=""
+    K3S_TOKEN=""
+    ETCD_BACKUPS_ACCESS_KEY=""
+    ETCD_BACKUPS_SECRET_KEY=""
+    ETCD_BACKUPS_BUCKET_NAME=""
+    MY_MACBOOK_IP=""
+```
+3. Run ansible playbook:
+```
+cd ansible
+    ansible-playbook -i inventory main.yml
+```
+4. Deploy ArgoCD, Cert-Manager, Nginx Ingress
+```
+cd terraform/kluster-resources
+    terraform init
+    terraform plan
+    terraform apply --auto-approve
+```
+5. SCP k3 config.
+6. Create ClusterIssuer, ArgoCD Ingress and Cert
+```
+kubectl apply -f specs/argocd-cert.yaml
+kubectl apply -f specs/argocd-ingress.yaml
+kubectl apply -f specs/letsencrypt-issuer.yaml
+```
 
-## Install MicroK8s Cluster
-* 1 API server 2 worker nodes
-* `ansible-playbook -i inventory initialize-cluster.yml`
-* `ansible-playbook -i inventory cluster-config.yml`
-* Copy microk8s config locally 

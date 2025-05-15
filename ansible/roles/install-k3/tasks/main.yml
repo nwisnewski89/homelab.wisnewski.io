@@ -1,0 +1,58 @@
+---
+- name: Set server url
+  ansible.builtin.set_fact:
+    api_server_ip: "{{ hostvars[groups['api-server'][0]]['ansible_default_ipv4']['address'] }}"
+
+- name: Ensure /etc/rancher/k3s directory exists
+  file:
+    path: /etc/rancher/k3s
+    state: directory
+    mode: '0755'
+  
+- name: Install k3s on control plane
+  ansible.builtin.shell:
+    cmd: |
+      curl -sfL https://get.k3s.io | sh -s - server --cluster-init \
+      --write-kubeconfig-mode=644 \
+      --token {{ k3s_token }} \
+      --etcd-s3 \
+      --etcd-s3-bucket={{ etcd_backups_bucket_name }} \
+      --etcd-s3-access-key={{ etcd_backups_access_key }} \
+      --etcd-s3-secret-key={{ etcd_backups_secret_key }} \
+      --etcd-s3-region={{ aws_region }} \
+      --etcd-snapshot-schedule-cron="0 */6 * * *" \
+      --etcd-snapshot-retention=72 \
+      --disable=traefik 
+  args:
+    creates: /usr/local/bin/k3s
+  when: inventory_hostname in groups['api-server']
+
+- name: Wait for server to be ready
+  ansible.builtin.wait_for:
+    host: "{{ api_server_ip }}"
+    port: 6443
+    delay: 10
+    timeout: 300
+    state: started
+
+- name: Install k3s on worker nodes
+  ansible.builtin.shell:
+    cmd: |
+      curl -sfL https://get.k3s.io | sh -s - agent  \
+      --server=https://{{ api_server_ip }}:6443  \
+      --token={{ k3s_token }}  \
+      --node-name={{ inventory_hostname }}
+  when: inventory_hostname in groups['worker-nodes']
+
+- name: Copy container registry config to k3s hosts
+  ansible.builtin.template:
+    src: registries.yaml.j2
+    dest: /etc/rancher/k3s/registries.yaml
+    force: yes
+    mode: '0644'
+  notify: 
+    - Restart k3s
+    - Restart k3s on worker nodes
+
+- name: Create handler for restarting k3s
+  ansible.builtin.meta: flush_handlers

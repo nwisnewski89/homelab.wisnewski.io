@@ -1,6 +1,0 @@
----
-- hosts: worker-nodes
-  gather_facts: yes
-  become: yes
-  roles:
-    - role: bind9-dns

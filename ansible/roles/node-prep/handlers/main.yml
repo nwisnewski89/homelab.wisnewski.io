@@ -1,0 +1,14 @@
+---
+- name: Reboot system
+  ansible.builtin.reboot:
+    msg: "Rebooting system"
+    reboot_timeout: 360000
+    connect_timeout: 10
+
+- name: Restart UFW
+  ansible.builtin.service:
+    name: ufw
+    state: started
+    enabled: yes
+    force: yes
+    daemon_reload: yes 

@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pihole-pihole
+  namespace: pihole
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-dns"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  tls:
+  - hosts:
+    - pihole.wisnewski.io
+    secretName: pihole-tls
+  ingressClassName: nginx
+  rules:
+  - host: pihole.wisnewski.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: pihole-pihole
+            port:
+              number: 443

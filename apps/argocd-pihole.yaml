@@ -7,9 +7,12 @@ spec:
   project: default
   source:
     repoURL: 'https://github.com/nwisnewski89/homelab.wisnewski.io.git'
-    targetRevision: v0.0.2
-    path: apps/pi-hole
+    targetRevision: main
+    path: apps/pihole
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: pihole
-  syncPolicy: {}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

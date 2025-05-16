@@ -27,7 +27,7 @@ resource "kubernetes_secret" "pihole_webpassword" {
   }
 
   data = {
-    password = var.pihole_webpassword
+    PIHOLE_PASSWORD = var.pihole_webpassword
   }
 
   type = "Opaque"

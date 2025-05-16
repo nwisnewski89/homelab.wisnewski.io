@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: pihole-tls
+  namespace: pihole
+spec:
+  secretName: pihole-tls
+  issuerRef:
+    name: letsencrypt-dns
+    kind: ClusterIssuer
+  commonName: pihole.wisnewski.io
+  dnsNames:
+    - pihole.wisnewski.io
+  

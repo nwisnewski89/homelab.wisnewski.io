@@ -21,3 +21,19 @@ variable "k3s_config_path" {
 variable "pihole_webpassword" {
   type = string
 }
+
+variable "github_username" {
+  type = string
+}
+
+variable "argocd_client_id" {
+  type = string
+}
+
+variable "argocd_client_secret" {
+  type = string
+}
+
+variable "argocd_domain" {
+  type = string
+}

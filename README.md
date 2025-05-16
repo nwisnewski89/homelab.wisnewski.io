@@ -39,5 +39,6 @@ kubectl apply -f apps/argocd/
 kubectl apply -f apps/dns/
 kubectl apply -f apps/metallb/
 ```
-
+7. Setup NFS share and mount to each node.
+8. Create pihole argo app.
 

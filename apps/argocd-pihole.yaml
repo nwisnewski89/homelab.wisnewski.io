@@ -1,0 +1,15 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: pihole
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'https://github.com/nwisnewski89/homelab.wisnewski.io.git'
+    targetRevision: v0.0.1
+    path: apps/pi-hole
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: pihole
+  syncPolicy: {}

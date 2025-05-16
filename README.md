@@ -33,10 +33,11 @@ cd terraform/kluster-resources
     terraform apply --auto-approve
 ```
 5. SCP k3 config.
-6. Create ClusterIssuer, ArgoCD Ingress and Cert
+6. Create ClusterIssuer, ArgoCD Ingress and Cert, Metallb IPPool
 ```
-kubectl apply -f specs/argocd-cert.yaml
-kubectl apply -f specs/argocd-ingress.yaml
-kubectl apply -f specs/letsencrypt-issuer.yaml
+kubectl apply -f apps/argocd/
+kubectl apply -f apps/dns/
+kubectl apply -f apps/metallb/
 ```
+
 

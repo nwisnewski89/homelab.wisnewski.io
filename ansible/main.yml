@@ -5,15 +5,15 @@
   roles:
     - node-prep
 
-- name: Install k3s
-  hosts: kluster
-  become: yes
-  roles:
-    - install-k3
-  vars:
-    aws_region: "{{ lookup('ansible.builtin.env', 'AWS_REGION') }}"
-    ghcr_token: "{{ lookup('ansible.builtin.env', 'GHCR_TOKEN') }}"
-    k3s_token: "{{ lookup('ansible.builtin.env', 'K3S_TOKEN') }}"
-    etcd_backups_access_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_ACCESS_KEY') }}"
-    etcd_backups_secret_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_SECRET_KEY') }}"
-    etcd_backups_bucket_name: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_BUCKET_NAME') }}"
+# - name: Install k3s
+#   hosts: kluster
+#   become: yes
+#   roles:
+#     - install-k3
+#   vars:
+#     aws_region: "{{ lookup('ansible.builtin.env', 'AWS_REGION') }}"
+#     ghcr_token: "{{ lookup('ansible.builtin.env', 'GHCR_TOKEN') }}"
+#     k3s_token: "{{ lookup('ansible.builtin.env', 'K3S_TOKEN') }}"
+#     etcd_backups_access_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_ACCESS_KEY') }}"
+#     etcd_backups_secret_key: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_SECRET_KEY') }}"
+#     etcd_backups_bucket_name: "{{ lookup('ansible.builtin.env', 'ETCD_BACKUPS_BUCKET_NAME') }}"

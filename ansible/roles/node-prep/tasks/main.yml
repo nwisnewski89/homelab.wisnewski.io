@@ -35,7 +35,7 @@
     PATH: "/usr/sbin:/usr/bin:/bin:{{ ansible_env.PATH }}"
   loop:
     - 10.0.0.0/8
-    - 192.168.0.0/16
+    - 192.168.4.0/24
   notify: Restart UFW
 
 - name: Open Flannel VXLAN port

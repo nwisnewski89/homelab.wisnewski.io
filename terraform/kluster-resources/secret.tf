@@ -1,3 +1,4 @@
+
 resource "kubernetes_secret" "route53" {
   metadata {
     name      = "route53-credentials-secret"
@@ -13,4 +14,21 @@ resource "kubernetes_secret" "route53" {
   depends_on = [helm_release.cert_manager]
 }
 
+resource "kubernetes_namespace" "pihole" {
+  metadata {
+    name = "pihole"
+  }
+}
 
+resource "kubernetes_secret" "pihole_webpassword" {
+  metadata {
+    name      = "pihole-webpassword"
+    namespace = "pihole"
+  }
+
+  data = {
+    password = var.pihole_webpassword
+  }
+
+  type = "Opaque"
+}

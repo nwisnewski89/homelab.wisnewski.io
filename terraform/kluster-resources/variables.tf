@@ -17,3 +17,7 @@ variable "gcp_region" {
 variable "k3s_config_path" {
   type = string
 }
+
+variable "pihole_webpassword" {
+  type = string
+}

@@ -3,7 +3,7 @@ api-server
 worker-nodes
 
 [api-server]
-silver-boi.local 
+silver-boi.local
 
 [worker-nodes]
 rainbow-ralph.local node_label="pihole"

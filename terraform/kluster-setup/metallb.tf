@@ -31,7 +31,7 @@ spec:
     - kluster-ip-pool
   nodeSelectors:
     - matchLabels:
-        ingress-nginx: "yes"
+        nginx-ingress: "yes"
 YAML
 
   depends_on = [

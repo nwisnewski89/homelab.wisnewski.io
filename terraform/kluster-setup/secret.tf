@@ -14,3 +14,5 @@ resource "kubernetes_secret" "route53" {
 
   depends_on = [helm_release.cert_manager]
 }
+
+

@@ -26,22 +26,14 @@ variable "argocd_domain" {
   type = string
 }
 
-variable "metallb_ip_pool" {
-  type = string
-}
-
 variable "letsencrypt_email" {
   type = string
 }
 
-# variable "github_username" {
-#   description = "GitHub username for container registry authentication"
-#   type        = string
-#   sensitive   = true
-# }
+variable "ingress_ip_pool" {
+  type = string 
+}
 
-# variable "github_pat" {
-#   description = "GitHub Personal Access Token for container registry authentication"
-#   type        = string
-#   sensitive   = true
-# }
+variable "pihole_ip_pool" {
+  type = string 
+}

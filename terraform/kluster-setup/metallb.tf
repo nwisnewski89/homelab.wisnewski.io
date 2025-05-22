@@ -29,6 +29,9 @@ metadata:
 spec:
   ipAddressPools:
     - kluster-ip-pool
+  nodeSelectors:
+    - matchLabels:
+        ingress-nginx: "yes"
 YAML
 
   depends_on = [

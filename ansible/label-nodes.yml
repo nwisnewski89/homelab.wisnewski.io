@@ -1,0 +1,9 @@
+---
+- name: Label nodes
+  hosts: worker-nodes
+  gather_facts: false
+  tasks:
+    - name: Label node
+      delegate_to: localhost
+      ansible.builtin.shell: |
+        kubectl label node {{ inventory_hostname }} {{ hostvars[inventory_hostname].node_label }}=yes

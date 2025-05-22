@@ -1,0 +1,12 @@
+---
+- name: Prepare nodes
+  hosts: kluster
+  become: yes
+  roles:
+    - node-prep
+
+# - name: Install k3s
+#   hosts: kluster
+#   become: yes
+#   roles:
+#     - install-k3s

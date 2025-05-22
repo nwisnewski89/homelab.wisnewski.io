@@ -1,0 +1,10 @@
+[kluster:children]
+api-server
+worker-nodes
+
+[api-server]
+silver-boi.local 
+
+[worker-nodes]
+rainbow-ralph.local node_label="pihole"
+black-phillip.local node_label="nginx-ingress"

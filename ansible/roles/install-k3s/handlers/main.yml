@@ -1,0 +1,14 @@
+---
+- name: Restart k3s
+  ansible.builtin.shell:
+    cmd: |
+      sudo systemctl stop k3s
+      sudo systemctl start k3s
+  when: inventory_hostname in groups['api-server']
+
+- name: Restart k3s on worker nodes
+  ansible.builtin.shell:
+    cmd: |  
+      sudo systemctl stop k3s-agent
+      sudo systemctl start k3s-agent
+  when: inventory_hostname in groups['worker-nodes']

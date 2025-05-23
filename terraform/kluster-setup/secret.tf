@@ -1,4 +1,3 @@
-
 resource "kubernetes_secret" "route53" {
   metadata {
     name      = "route53-credentials-secret"

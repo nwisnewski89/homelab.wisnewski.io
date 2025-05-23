@@ -38,9 +38,7 @@ cd terraform/kluster-resources
     terraform plan
     terraform apply --auto-approve
 ```
-7. Resolve issue with nginx service account requesting IP's from Metallb.
+7. Set up pihole argo application.
 ```
-kubectl create secret generic ingress-nginx-token --from-literal=token=$(kubectl create token ingress-nginx -n ingress-nginx) -n ingress-nginx
-kubectl rollout restart deployment -n ingress-nginx ingress-nginx-controller
-```
+ 
 

@@ -32,6 +32,8 @@ resource "helm_release" "cert_manager" {
   ]
 }
 
+# Pin ingress controller to single node.
+# Servicelb will bind host port 80 and 443 to the ingress controller.
 resource "helm_release" "nginx_ingress" {
   name             = "ingress-nginx"
   namespace        = "ingress-nginx"
@@ -48,21 +50,5 @@ resource "helm_release" "nginx_ingress" {
           nginx-ingress: "yes"
     EOF
   ]
-
-  depends_on = [
-    helm_release.metallb,
-    kubectl_manifest.metallb_ip_pool,
-    kubectl_manifest.metallb_l2_advertisement
-  ]
-}
-
-resource "helm_release" "metallb" {
-  name             = "metallb"
-  namespace        = "metallb-system"
-  create_namespace = true
-
-  repository = "https://metallb.github.io/metallb"
-  chart      = "metallb"
-  version    = "0.14.9"
 }
 

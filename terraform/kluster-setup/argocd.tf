@@ -54,10 +54,8 @@ spec:
 YAML
 
   depends_on = [
-    helm_release.metallb,
     helm_release.nginx_ingress,
     helm_release.argocd,
-    kubectl_manifest.metallb_ip_pool,
     kubectl_manifest.argocd_cert
   ]
-} 
+}

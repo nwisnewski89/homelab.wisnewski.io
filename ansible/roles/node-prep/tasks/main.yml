@@ -20,6 +20,11 @@
       - ufw
     state: present
 
+- name: Enable UFW
+  community.general.ufw:
+    state: enabled
+    logging: medium
+
 - name: Open all TCP ports
   community.general.ufw:
     rule: allow
@@ -77,10 +82,10 @@
     - { key: 'net.ipv4.ip_forward', value: '1' }
     - { key: 'net.ipv4.ip_nonlocal_bind', value: '1' }
 
-- name: Allow promiscuous mode on eth0
-  ansible.builtin.command: ip link set eth0 promisc on
-  args:
-    executable: /bin/bash
+# - name: Allow promiscuous mode on eth0
+#   ansible.builtin.command: ip link set eth0 promisc on
+#   args:
+#     executable: /bin/bash
 
 - name: Create containerd config directory
   ansible.builtin.file:

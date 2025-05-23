@@ -5,8 +5,8 @@
   roles:
     - node-prep
 
-# - name: Install k3s
-#   hosts: kluster
-#   become: yes
-#   roles:
-#     - install-k3s
+- name: Install k3s
+  hosts: kluster
+  become: yes
+  roles:
+    - install-k3s

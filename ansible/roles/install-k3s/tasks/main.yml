@@ -8,7 +8,7 @@
     path: /etc/rancher/k3s
     state: directory
     mode: '0755'
-  
+
 - name: Install k3s on control plane
   ansible.builtin.shell:
     cmd: |
@@ -23,7 +23,6 @@
       --etcd-snapshot-schedule-cron="0 */6 * * *" \
       --etcd-snapshot-retention=72 \
       --flannel-backend=vxlan \
-      --disable=servicelb \
       --disable=traefik 
   when: inventory_hostname in groups['api-server']
   notify:

@@ -1,3 +1,4 @@
 .terraform
 *.tfvars
 credentials.json
+argocd.pem

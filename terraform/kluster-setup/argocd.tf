@@ -59,3 +59,21 @@ YAML
     kubectl_manifest.argocd_cert
   ]
 }
+
+resource "helm_release" "argocd" {
+  name             = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  version          = "8.0.3"
+
+  values = [
+    <<-EOF
+      global:
+        domain: ${var.argocd_domain}
+      crds:
+        keep: false
+    EOF
+  ]
+}

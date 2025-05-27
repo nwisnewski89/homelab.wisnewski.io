@@ -8,3 +8,8 @@
 - name: Restart UFW
   community.general.ufw:
     state: reloaded
+
+- name: Restart networking
+  ansible.builtin.service:
+    name: systemd-networkd
+    state: restarted

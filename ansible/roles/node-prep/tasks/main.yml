@@ -1,24 +1,24 @@
 ---
-- name: Update apt cache
-  ansible.builtin.apt:
-    update_cache: yes
-    cache_valid_time: 7776000
+# - name: Update apt cache
+#   ansible.builtin.apt:
+#     update_cache: yes
+#     cache_valid_time: 7776000
 
-- name: Install required packages
-  ansible.builtin.apt:
-    name:
-      - curl
-      - apt-transport-https
-      - ca-certificates
-      - gnupg
-      - dnsutils
-      - net-tools
-      - iptables
-      - iptables-persistent
-      - bridge-utils
-      - software-properties-common
-      - ufw
-    state: present
+# - name: Install required packages
+#   ansible.builtin.apt:
+#     name:
+#       - curl
+#       - apt-transport-https
+#       - ca-certificates
+#       - gnupg
+#       - dnsutils
+#       - net-tools
+#       - iptables
+#       - iptables-persistent
+#       - bridge-utils
+#       - software-properties-common
+#       - ufw
+#     state: present
 
 - name: Enable UFW
   community.general.ufw:
@@ -82,11 +82,6 @@
     - { key: 'net.ipv4.ip_forward', value: '1' }
     - { key: 'net.ipv4.ip_nonlocal_bind', value: '1' }
 
-# - name: Allow promiscuous mode on eth0
-#   ansible.builtin.command: ip link set eth0 promisc on
-#   args:
-#     executable: /bin/bash
-
 - name: Create containerd config directory
   ansible.builtin.file:
     path: /etc/containerd
@@ -133,3 +128,23 @@
       * soft nproc unlimited
       * hard nproc unlimited
     mode: '0644'
+
+- name: Stop systemd-resolved service
+  ansible.builtin.service:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+
+- name: Remove symlink to /run/systemd/resolve/resolv.conf
+  ansible.builtin.file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Configure DNS resolvers
+  ansible.builtin.copy:
+    dest: /etc/resolv.conf
+    content: |
+      nameserver 8.8.8.8
+      nameserver 1.1.1.1
+    mode: '0644'
+  notify: Restart networking

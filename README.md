@@ -31,14 +31,12 @@ cd ansible
 cd ansible
     ansible-playbook -i inventory label-nodes.yml
 ```
-6. Deploy ArgoCD, Cert-Manager, Nginx Ingress, Metallb:
+6. Deploy ArgoCD, Cert-Manager, Nginx Ingress
 ```
 cd terraform/kluster-resources
     terraform init
     terraform plan
     terraform apply --auto-approve
-```
-7. Set up pihole argo application.
 ```
  
 

@@ -29,3 +29,11 @@ variable "argocd_domain" {
 variable "letsencrypt_email" {
   type = string
 }
+
+variable "pihole_ip" {
+  type = string
+}
+
+variable "pihole_password" {
+  type = string
+}

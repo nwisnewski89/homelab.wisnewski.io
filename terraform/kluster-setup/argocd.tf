@@ -10,9 +10,9 @@ spec:
   issuerRef:
     name: letsencrypt-dns
     kind: ClusterIssuer
-  commonName: ${var.argocd_domain}
+  commonName: argocd.${var.domain}
   dnsNames:
-    - ${var.argocd_domain}
+    - argocd.${var.domain}
 YAML
 
   depends_on = [
@@ -37,11 +37,11 @@ metadata:
 spec:
   tls:
   - hosts:
-    - ${var.argocd_domain}
+    - argocd.${var.domain}
     secretName: argocd-tls
   ingressClassName: nginx
   rules:
-  - host: ${var.argocd_domain}
+  - host: argocd.${var.domain}
     http:
       paths:
       - path: /
@@ -71,7 +71,7 @@ resource "helm_release" "argocd" {
   values = [
     <<-EOF
       global:
-        domain: ${var.argocd_domain}
+        domain: argocd.${var.domain}
       crds:
         keep: false
     EOF

@@ -22,7 +22,7 @@ variable "k3s_config_path" {
   type = string
 }
 
-variable "argocd_domain" {
+variable "domain" {
   type = string
 }
 

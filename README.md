@@ -38,5 +38,5 @@ cd terraform/kluster-resources
     terraform plan
     terraform apply --auto-approve
 ```
- 
+7. Install promtail log collector `./install_monitoring.sh`,
 

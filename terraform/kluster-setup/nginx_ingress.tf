@@ -10,7 +10,7 @@ resource "helm_release" "nginx_ingress" {
   version    = "4.12.2"
 
   values = [
-    <<-EOF
+    <<EOF
       controller:
         nodeSelector:
           nginx-ingress: "yes"

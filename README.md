@@ -1,6 +1,10 @@
 # Homelab Set Up
 
 - K3 cluster running on 3 Raspberry Pi 4 Running Ubuntu Server 24.04.2 64-bit LTS.
+- ArgoCD for managing applications [argocd.wisnewski.io](https://github.com/nwisnewski89/argocd.wisnewski.io). 
+- Vault for secrets management.
+- Nginx for ingress.
+- Cert-Manager for TLS certificates.
 
 1. Deploy AWS DNS and S3 backups:
 ```
@@ -38,5 +42,11 @@ cd terraform/kluster-resources
     terraform plan
     terraform apply --auto-approve
 ```
-7. Install promtail log collector `./install_monitoring.sh`,
+7. Deploy Vault Config:
+```
+cd terraform/vault-config
+    terraform init
+    terraform plan
+    terraform apply --auto-approve
+```
 

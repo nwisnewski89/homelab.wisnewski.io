@@ -134,7 +134,7 @@ data:
   AVP_AUTH_TYPE: "k8s"
   AVP_K8S_ROLE: "argocd"
   AVP_TYPE: "vault"
-  VAULT_ADDR: "http://vault.vault:8200"
+  VAULT_ADDR: "http://vault.vault.svc.cluster.local:8200"
   VAULT_SKIP_VERIFY: "true"
 YAML
 

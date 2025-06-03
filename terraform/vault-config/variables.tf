@@ -57,3 +57,14 @@ variable "network_cidr_ipv6_v2" {
   type        = string
   description = "The CIDR of the network"
 }
+
+variable "loki_credentials" {
+  type        = object({
+    host = string
+    port = string
+    tenant_id = string
+    username = string
+    password = string
+  })
+  description = "The credentials for the Loki server"
+}

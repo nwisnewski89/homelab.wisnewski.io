@@ -101,12 +101,12 @@ resource "helm_release" "argocd" {
           subPath: argocd-vault-plugin
         initContainers:
         - name: download-tools
-          image: curlimages/curl:8.5.0  # Using a lightweight curl image
+          image: curlimages/curl:8.5.0
           command: [sh, -c]
           args:
             - |
               curl -L -o /custom-tools/argocd-vault-plugin \
-                https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.17.0/argocd-vault-plugin_linux_amd64 && \
+                https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.18.0/argocd-vault-plugin_1.18.0_linux_arm64 && \
               chmod +x /custom-tools/argocd-vault-plugin
           volumeMounts:
             - mountPath: /custom-tools

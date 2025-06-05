@@ -1,15 +1,15 @@
 terraform {
   required_providers {
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "~> 3.0"
     }
     google = {
-      source = "hashicorp/google"
+      source  = "hashicorp/google"
       version = "~> 5.0"
     }
     kubernetes = {
-      source = "hashicorp/kubernetes"
+      source  = "hashicorp/kubernetes"
       version = "~> 2.0"
     }
   }
@@ -21,7 +21,7 @@ provider "kubernetes" {
 
 provider "vault" {
   address = var.vault_addr
-  token = var.vault_token
+  token   = var.vault_token
 }
 
 provider "google" {

@@ -35,18 +35,23 @@ cd ansible
 cd ansible
     ansible-playbook -i inventory label-nodes.yml
 ```
-6. Deploy ArgoCD, Cert-Manager, Nginx Ingress
+6. Deploy argocd with vault plugin using the [kustomzie-app](https://argocd-vault-plugin.readthedocs.io/en/stable/installation/) installed to default namespace:
+```
+cd argocd-install
+    ./argocd_install
+```
+7. Deploy Cert-Manager, Nginx Ingress, Vault:
 ```
 cd terraform/kluster-resources
     terraform init
     terraform plan
     terraform apply --auto-approve
 ```
-7. Deploy Vault Config:
+8. Deploy Vault Config, terraform creates the app role, and k8s secret utilized by argocd vault plugin:
 ```
 cd terraform/vault-config
     terraform init
     terraform plan
     terraform apply --auto-approve
 ```
-
+9. Restart argocd repo server `kubectl rollout restart deployment argocd-repo-server`.

@@ -1,25 +1,7 @@
-resource "vault_auth_backend" "kubernetes" {
-  type = "kubernetes"
-}
-
-data "kubernetes_secret_v1" "vault_sa" {
-  metadata {
-    name      = "vault-auth"
-    namespace = "vault"
-  }
-}
-
-resource "vault_kubernetes_auth_backend_config" "config" {
-  backend            = vault_auth_backend.kubernetes.path
-  kubernetes_host    = "https://${var.kubernetes_host}:443"
-  kubernetes_ca_cert = data.kubernetes_secret_v1.vault_sa.data["ca.crt"]
-  token_reviewer_jwt = data.kubernetes_secret_v1.vault_sa.data["token"]
-}
-
 resource "vault_mount" "secrets_engine" {
-  path        = "secrets"
-  type        = "kv"
-  options     = { version = "2" }
+  path    = "secrets"
+  type    = "kv"
+  options = { version = "2" }
 }
 
 resource "vault_policy" "argocd" {
@@ -32,11 +14,33 @@ path "secrets/*" {
 EOT
 }
 
-resource "vault_kubernetes_auth_backend_role" "argocd" {
-  backend                          = vault_auth_backend.kubernetes.path
-  role_name                       = "argocd-plugin"
-  bound_service_account_names     = ["argocd-repo-server"]
-  bound_service_account_namespaces = ["argocd"]
-  token_ttl                       = 3600
-  token_policies                  = [vault_policy.argocd.name]
+resource "vault_auth_backend" "approle" {
+  type = "approle"
+}
+
+resource "vault_approle_auth_backend_role" "argocd" {
+  backend        = vault_auth_backend.approle.path
+  role_name      = "argocd"
+  bind_secret_id = true
+  token_policies = [vault_policy.argocd.name]
+}
+
+resource "vault_approle_auth_backend_role_secret_id" "argocd" {
+  backend        = vault_auth_backend.approle.path
+  role_name      = vault_approle_auth_backend_role.argocd.role_name
+}
+
+resource "kubernetes_secret" "argocd_vault_credentials" {
+  metadata {
+    name      = "argocd-vault-plugin-credentials"
+    namespace = "default"
+  }
+
+  data = {
+    VAULT_ADDR    = "http://vault.vault.svc.cluster.local:8200"
+    AVP_TYPE      = "vault"
+    AVP_AUTH_TYPE = "approle"
+    AVP_ROLE_ID   = vault_approle_auth_backend_role.argocd.role_id
+    AVP_SECRET_ID = vault_approle_auth_backend_role_secret_id.argocd.secret_id
+  }
 }

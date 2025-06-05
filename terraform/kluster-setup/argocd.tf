@@ -1,16 +1,10 @@
-resource "kubernetes_namespace" "argocd" {
-  metadata {
-    name = "argocd"
-  }
-}
-
 resource "kubectl_manifest" "argocd_cert" {
   yaml_body = <<YAML
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: argocdcd-tls
-  namespace: argocd
+  name: argocd-tls
+  namespace: default
 spec:
   secretName: argocd-tls
   issuerRef:
@@ -23,8 +17,6 @@ YAML
 
   depends_on = [
     helm_release.cert_manager,
-    kubernetes_namespace.argocd,
-    helm_release.argocd,
     kubectl_manifest.kluster_issuer
   ]
 }
@@ -34,8 +26,8 @@ resource "kubectl_manifest" "argocd_ingress" {
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: argo-cd-argocd-server
-  namespace: argocd
+  name: argocd-server
+  namespace: default
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-dns"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
@@ -55,90 +47,13 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: argo-cd-argocd-server
+            name: argocd-server
             port:
               number: 443
 YAML
 
   depends_on = [
     helm_release.nginx_ingress,
-    kubernetes_namespace.argocd,
-    helm_release.argocd,
     kubectl_manifest.argocd_cert
-  ]
-}
-
-resource "helm_release" "argocd" {
-  name             = "argo-cd"
-  namespace        = "argocd"
-  create_namespace = false
-  repository       = "https://argoproj.github.io/argo-helm"
-  chart            = "argo-cd"
-  version          = "8.0.3"
-
-  values = [
-    <<-EOF
-      global:
-        domain: argocd.${var.domain}
-      crds:
-        keep: false
-      configs:
-        secret:
-          createSecret: true
-        cm:
-          configManagementPlugins: |
-            - name: argocd-vault-plugin
-              generate:
-                command: ["argocd-vault-plugin"]
-                args: ["generate", "./"]
-      repoServer:
-        volumes:
-        - name: custom-tools
-          emptyDir: {}
-        volumeMounts:
-        - name: custom-tools
-          mountPath: /usr/local/bin/argocd-vault-plugin
-          subPath: argocd-vault-plugin
-        initContainers:
-        - name: download-tools
-          image: curlimages/curl:8.5.0
-          command: [sh, -c]
-          args:
-            - |
-              curl -L -o /custom-tools/argocd-vault-plugin \
-                https://github.com/argoproj-labs/argocd-vault-plugin/releases/download/v1.18.0/argocd-vault-plugin_1.18.0_linux_arm64 && \
-              chmod +x /custom-tools/argocd-vault-plugin
-          volumeMounts:
-            - mountPath: /custom-tools
-              name: custom-tools
-        envFrom:
-          - configMapRef:
-              name: argocd-vault-plugin-config
-    EOF
-  ]
-
-  depends_on = [
-    kubernetes_namespace.argocd,
-    kubectl_manifest.avp_configmap
-  ]
-}
-
-resource "kubectl_manifest" "avp_configmap" {
-  yaml_body = <<YAML
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: argocd-vault-plugin-config
-  namespace: argocd
-data:
-  AVP_AUTH_TYPE: "k8s"
-  AVP_K8S_ROLE: "argocd"
-  AVP_TYPE: "vault"
-  VAULT_ADDR: "http://vault.vault.svc.cluster.local:8200"
-  VAULT_SKIP_VERIFY: "true"
-YAML
-
-  depends_on = [
-    kubernetes_namespace.argocd,
   ]
 }

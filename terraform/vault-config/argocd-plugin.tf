@@ -33,7 +33,7 @@ resource "vault_approle_auth_backend_role_secret_id" "argocd" {
 resource "kubernetes_secret" "argocd_vault_credentials" {
   metadata {
     name      = "argocd-vault-plugin-credentials"
-    namespace = "default"
+    namespace = "argocd"
   }
 
   data = {

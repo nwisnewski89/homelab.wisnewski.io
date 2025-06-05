@@ -7,3 +7,18 @@ resources:
 patchesStrategicMerge:
 - argocd-repo-server-deploy.yaml
 - argocd-cm.yaml
+
+
+patches:
+- target:
+    kind: ClusterRole
+    name: argocd-application-controller
+  patch: |
+    - op: replace
+      path: /rules
+      value:
+        - apiGroups: ["*"]
+          resources: ["*"]
+          verbs: ["*"]
+        - nonResourceURLs: ["*"]
+          verbs: ["*"] 

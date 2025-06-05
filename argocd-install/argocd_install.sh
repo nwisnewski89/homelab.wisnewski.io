@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-kubectl apply -k .
+kubectl create namespace argocd
+kubectl apply -k . -n argocd

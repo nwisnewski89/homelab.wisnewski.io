@@ -4,7 +4,7 @@ apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: argocd-tls
-  namespace: default
+  namespace: argocd
 spec:
   secretName: argocd-tls
   issuerRef:
@@ -27,7 +27,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: argocd-server
-  namespace: default
+  namespace: argocd
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt-dns"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"

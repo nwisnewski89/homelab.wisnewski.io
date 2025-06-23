@@ -29,3 +29,19 @@ variable "domain" {
 variable "letsencrypt_email" {
   type = string
 }
+
+variable "pihole_ip" {
+  type = string
+}
+
+variable "argocd_github_url" {
+  type = string
+}
+
+variable "argocd_github_username" {
+  type = string
+}
+
+variable "argocd_github_token" { 
+    type = string
+}

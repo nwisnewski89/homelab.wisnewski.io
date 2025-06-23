@@ -1,4 +1,4 @@
-output "vault_unseal_key" {
-  value     = random_password.unseal_key.result
+output "pihole_password" {
+  value     = random_password.pihole_password.result
   sensitive = true
 }

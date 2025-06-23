@@ -1,24 +1,25 @@
 ---
-# - name: Update apt cache
-#   ansible.builtin.apt:
-#     update_cache: yes
-#     cache_valid_time: 7776000
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: 7776000
 
-# - name: Install required packages
-#   ansible.builtin.apt:
-#     name:
-#       - curl
-#       - apt-transport-https
-#       - ca-certificates
-#       - gnupg
-#       - dnsutils
-#       - net-tools
-#       - iptables
-#       - iptables-persistent
-#       - bridge-utils
-#       - software-properties-common
-#       - ufw
-#     state: present
+- name: Install required packages
+  ansible.builtin.apt:
+    name:
+      - curl
+      - chrony
+      - apt-transport-https
+      - ca-certificates
+      - gnupg
+      - dnsutils
+      - net-tools
+      - iptables
+      - iptables-persistent
+      - bridge-utils
+      - software-properties-common
+      - ufw
+    state: present
 
 - name: Enable UFW
   community.general.ufw:
@@ -82,6 +83,27 @@
     - { key: 'net.ipv4.ip_forward', value: '1' }
     - { key: 'net.ipv4.ip_nonlocal_bind', value: '1' }
 
+- name: Get all network interfaces
+  ansible.builtin.shell: "ip link show | grep '^[0-9]' | awk -F': ' '{print $2}' | grep -v lo"
+  register: network_interfaces
+  changed_when: false
+
+- name: Enable promiscuous mode on all network interfaces
+  ansible.builtin.shell:
+    cmd: "ip link set {{ item }} promisc on"
+  loop: "{{ network_interfaces.stdout_lines }}"
+  changed_when: false
+  ignore_errors: yes
+
+- name: Make promiscuous mode persistent for all interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/network/interfaces
+    line: "up ip link set {{ item }} promisc on"
+    insertafter: EOF
+    create: yes
+  loop: "{{ network_interfaces.stdout_lines }}"
+  ignore_errors: yes
+
 - name: Create containerd config directory
   ansible.builtin.file:
     path: /etc/containerd
@@ -107,11 +129,6 @@
     path: /etc/fstab
     regexp: '^([^#].*?\sswap\s.*)$'
     replace: '# \1'
-
-- name: Install chrony
-  ansible.builtin.apt:
-    name: chrony
-    state: present
 
 - name: Ensure chrony is running
   ansible.builtin.service:

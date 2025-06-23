@@ -25,6 +25,8 @@
       --flannel-backend=vxlan \
       --disable=traefik 
   when: inventory_hostname in groups['api-server']
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
   notify:
     - Restart k3s
 
@@ -42,8 +44,11 @@
       curl -sfL https://get.k3s.io | sh -s - agent  \
       --server=https://{{ api_server_ip }}:6443  \
       --token={{ k3s_token }}  \
-      --node-name={{ inventory_hostname }}
+      --node-name={{ inventory_hostname }} \
+      --node-label={{ hostvars[inventory_hostname]['node_label'] }}
   when: inventory_hostname in groups['worker-nodes']
+  environment:
+    INSTALL_K3S_VERSION: "{{ k3s_version }}"
   notify:
     - Restart k3s on worker nodes
 

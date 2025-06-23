@@ -27,7 +27,7 @@ YAML
     helm_release.cert_manager,
     kubernetes_secret.route53
   ]
-}
+} 
 
 resource "kubernetes_secret" "route53" {
   metadata {

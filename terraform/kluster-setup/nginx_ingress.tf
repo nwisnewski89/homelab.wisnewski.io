@@ -7,10 +7,10 @@ resource "helm_release" "nginx_ingress" {
 
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
-  version    = "4.12.2"
+  version    = "4.12.0"
 
   values = [
-    <<EOF
+    <<-EOF
       controller:
         nodeSelector:
           nginx-ingress: "yes"

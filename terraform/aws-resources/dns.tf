@@ -14,10 +14,3 @@ resource "aws_route53_record" "pihole" {
   records = ["10.43.0.2"]
 }
 
-resource "aws_route53_record" "vault" {
-  zone_id = aws_route53_zone.dns_zone.zone_id
-  name    = "vault"
-  type    = "A"
-  ttl     = 60
-  records = ["10.43.0.3"]
-}

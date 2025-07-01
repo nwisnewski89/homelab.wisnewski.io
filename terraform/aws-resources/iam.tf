@@ -58,6 +58,18 @@ data "aws_iam_policy_document" "dns_policy" {
   }
 }
 
+data "aws_iam_policy_document" "ses_policy_doc" {
+  statement {
+    actions = [
+      "ses:SendEmail",
+      "ses:SendRawEmail"
+    ]
+    resources = [
+      aws_ses_domain_identity.domain.arn
+    ]
+  }
+}
+
 resource "aws_iam_user" "etcd_backups_user" {
   name = "etcd-backups-${var.project_id}"
 }
@@ -86,49 +98,14 @@ resource "aws_iam_user_policy_attachment" "dns_policy_attachment" {
   policy_arn = aws_iam_policy.dns_policy.arn
 }
 
-resource "aws_route53_zone" "dns_zone" {
-  name = var.route53_zone_name
+resource "aws_iam_policy" "ses_policy" {
+  name   = "ses-${var.project_id}"
+  policy = data.aws_iam_policy_document.ses_policy_doc.json
 }
 
-resource "aws_cloudwatch_log_group" "dns_query_logs" {
-  name              = "/aws/route53/${aws_route53_zone.dns_zone.name}"
-  retention_in_days = 7
+resource "aws_iam_user_policy_attachment" "ses_policy_attachment" {
+  user       = aws_iam_user.etcd_backups_user.name
+  policy_arn = aws_iam_policy.ses_policy.arn
 }
 
-data "aws_caller_identity" "current" {}
-
-data "aws_iam_policy_document" "route53_query_logging_policy_doc" {
-  statement {
-    actions = [
-      "logs:CreateLogStream",
-      "logs:PutLogEvents"
-    ]
-    effect = "Allow"
-    principals {
-      type        = "Service"
-      identifiers = ["route53.amazonaws.com"]
-    }
-    resources = ["${aws_cloudwatch_log_group.dns_query_logs.arn}:*"]
-    condition {
-      test     = "StringEquals"
-      variable = "aws:SourceAccount"
-      values   = [data.aws_caller_identity.current.account_id]
-    }
-  }
-}
-
-resource "aws_cloudwatch_log_resource_policy" "route53_query_logging_policy" {
-  policy_name     = "route53-query-logging-policy"
-  policy_document = data.aws_iam_policy_document.route53_query_logging_policy_doc.json
-}
-
-resource "aws_route53_query_log" "dns_query_logging" {
-  depends_on = [
-    aws_cloudwatch_log_group.dns_query_logs,
-    aws_cloudwatch_log_resource_policy.route53_query_logging_policy
-  ]
-
-  cloudwatch_log_group_arn = aws_cloudwatch_log_group.dns_query_logs.arn
-  zone_id                  = aws_route53_zone.dns_zone.zone_id
-}
 

@@ -64,9 +64,7 @@ data "aws_iam_policy_document" "ses_policy_doc" {
       "ses:SendEmail",
       "ses:SendRawEmail"
     ]
-    resources = [
-      aws_ses_domain_identity.domain.arn
-    ]
+    resources = ["*"]
   }
 }
 
@@ -106,6 +104,88 @@ resource "aws_iam_policy" "ses_policy" {
 resource "aws_iam_user_policy_attachment" "ses_policy_attachment" {
   user       = aws_iam_user.etcd_backups_user.name
   policy_arn = aws_iam_policy.ses_policy.arn
+}
+
+# OIDC Identity Provider for Keycloak
+resource "aws_iam_openid_connect_provider" "keycloak" {
+  url = "https://your-keycloak-domain/auth/realms/your-realm"
+
+  client_id_list = [
+    "jenkins-client-id"  # Replace with your Jenkins OIDC client ID
+  ]
+
+  thumbprint_list = [
+    "YOUR_KEYCLOAK_THUMBPRINT"  # Replace with your Keycloak server's SSL certificate thumbprint
+  ]
+}
+
+# IAM Policy for Jenkins web identity role
+data "aws_iam_policy_document" "jenkins_web_identity_policy" {
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ]
+    resources = [
+      aws_s3_bucket.etcd_backups.arn,
+      "${aws_s3_bucket.etcd_backups.arn}/*"
+    ]
+  }
+  
+  statement {
+    effect = "Allow"
+    actions = [
+      "route53:ChangeResourceRecordSets",
+      "route53:List*",
+      "route53:Get*"
+    ]
+    resources = ["*"]
+  }
+  
+  statement {
+    effect = "Allow"
+    actions = [
+      "ses:SendEmail",
+      "ses:SendRawEmail"
+    ]
+    resources = ["*"]
+  }
+}
+
+# IAM Role for Jenkins web identity
+data "aws_iam_policy_document" "jenkins_web_identity_assume_role_policy" {
+  statement {
+    effect = "Allow"
+    principals {
+      type        = "Federated"
+      identifiers = [aws_iam_openid_connect_provider.keycloak.arn]
+    }
+    actions = ["sts:AssumeRoleWithWebIdentity"]
+    condition {
+      test     = "StringEquals"
+      variable = "${aws_iam_openid_connect_provider.keycloak.url}:aud"
+      values   = ["jenkins-client-id"]  # Must match your Jenkins OIDC client ID
+    }
+    condition {
+      test     = "StringLike"
+      variable = "${aws_iam_openid_connect_provider.keycloak.url}:sub"
+      values   = ["*:jenkins:*"]  # Adjust based on your Keycloak user mapping
+    }
+  }
+}
+
+resource "aws_iam_role" "jenkins_web_identity_role" {
+  name               = "jenkins-web-identity-role-${var.project_id}"
+  assume_role_policy = data.aws_iam_policy_document.jenkins_web_identity_assume_role_policy.json
+}
+
+resource "aws_iam_role_policy" "jenkins_web_identity_policy" {
+  name   = "jenkins-web-identity-policy-${var.project_id}"
+  role   = aws_iam_role.jenkins_web_identity_role.id
+  policy = data.aws_iam_policy_document.jenkins_web_identity_policy.json
 }
 
 

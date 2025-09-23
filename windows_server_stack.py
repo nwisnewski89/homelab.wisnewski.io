@@ -328,3 +328,71 @@ Write-Host "Windows Server setup completed successfully at $(Get-Date)"
             detailed_monitoring=True,
             ssm_session_permissions=True
         )
+
+
+
+
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_ec2 as ec2,
+)
+from constructs import Construct
+
+class SSMInstanceStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        
+        # Create IAM role for EC2 instance
+        self.ssm_role = iam.Role(
+            self,
+            "SSMInstanceRole",
+            assumed_by=iam.ServicePrincipal("ec2.amazonaws.com"),
+            managed_policies=[
+                iam.ManagedPolicy.from_aws_managed_policy_name("AmazonSSMManagedInstanceCore")
+            ],
+            inline_policies={
+                "SSMInstanceSpecificPolicy": iam.PolicyDocument(
+                    statements=[
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=[
+                                "ssm:SendCommand",
+                                "ssm:ListCommandInvocations",
+                                "ssm:GetCommandInvocation",
+                                "ssm:DescribeInstanceInformation",
+                                "ssm:GetConnectionStatus"
+                            ],
+                            resources=[f"arn:aws:ec2:*:*:instance/{self.instance.instance_id}"]
+                        ),
+                        iam.PolicyStatement(
+                            effect=iam.Effect.ALLOW,
+                            actions=[
+                                "ssmmessages:CreateControlChannel",
+                                "ssmmessages:CreateDataChannel",
+                                "ssmmessages:OpenControlChannel",
+                                "ssmmessages:OpenDataChannel"
+                            ],
+                            resources=[f"arn:aws:ec2:*:*:instance/{self.instance.instance_id}"]
+                        )
+                    ]
+                )
+            }
+        )
+        
+        # Create instance profile
+        self.instance_profile = iam.InstanceProfile(
+            self,
+            "SSMInstanceProfile",
+            role=self.ssm_role
+        )
+        
+        # Create EC2 instance
+        self.instance = ec2.Instance(
+            self,
+            "SSMInstance",
+            vpc=ec2.Vpc.from_lookup(self, "DefaultVPC", is_default=True),
+            instance_type=ec2.InstanceType.of(ec2.InstanceClass.T3, ec2.InstanceSize.MICRO),
+            machine_image=ec2.MachineImage.latest_amazon_linux(),
+            role=self.ssm_role
+        )

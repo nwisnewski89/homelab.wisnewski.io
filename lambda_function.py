@@ -1,434 +1,360 @@
+#!/usr/bin/env python3
+"""
+CDK Stack for generating IAM Access Keys and sending details to SNS
+This uses a Custom Resource Lambda to publish actual key values (not tokens) to SNS.
+"""
+
+from aws_cdk import (
+    Stack,
+    aws_iam as iam,
+    aws_sns as sns,
+    aws_sns_subscriptions as sns_subs,
+    aws_lambda as lambda_,
+    CustomResource,
+    Duration,
+    CfnOutput,
+    custom_resources as cr,
+)
+from constructs import Construct
+import json
+
+
+class AccessKeySnsNotificationStack(Stack):
+    """CDK Stack that creates IAM access keys and sends details to SNS"""
+
+    def __init__(
+        self, 
+        scope: Construct, 
+        construct_id: str,
+        email_address: str = "admin@example.com",
+        user_name: str = "cdk-notification-user",
+        **kwargs
+    ) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create SNS topic
+        self.topic = sns.Topic(
+            self, "AccessKeyNotificationTopic",
+            display_name="IAM Access Key Notifications",
+            topic_name="iam-access-key-notifications"
+        )
+
+        # Add email subscription
+        self.topic.add_subscription(
+            sns_subs.EmailSubscription(email_address)
+        )
+
+        # Create IAM user
+        self.user = iam.User(
+            self, "NotificationUser",
+            user_name=user_name,
+            description="User created by CDK with SNS notification"
+        )
+
+        # Create access key for the user
+        self.access_key = iam.AccessKey(
+            self, "NotificationUserAccessKey",
+            user=self.user,
+            description="Access key for notification user"
+        )
+
+        # Add some policies to the user
+        self.user.add_managed_policy(
+            iam.ManagedPolicy.from_aws_managed_policy_name("AmazonS3ReadOnlyAccess")
+        )
+
+        # Create the Lambda function that will publish to SNS
+        notification_lambda = lambda_.Function(
+            self, "AccessKeyNotificationFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="index.handler",
+            code=lambda_.Code.from_inline(self._get_lambda_code()),
+            timeout=Duration.seconds(30),
+            description="Publishes access key details to SNS topic"
+        )
+
+        # Grant the Lambda permission to publish to SNS
+        self.topic.grant_publish(notification_lambda)
+
+        # Create Custom Resource Provider
+        provider = cr.Provider(
+            self, "AccessKeyNotificationProvider",
+            on_event_handler=notification_lambda
+        )
+
+        # Create Custom Resource that triggers the Lambda
+        # The Lambda will receive the actual access key values
+        custom_resource = CustomResource(
+            self, "AccessKeyNotificationCustomResource",
+            service_token=provider.service_token,
+            properties={
+                "TopicArn": self.topic.topic_arn,
+                "UserName": self.user.user_name,
+                "AccessKeyId": self.access_key.access_key_id,
+                "SecretAccessKey": self.access_key.secret_access_key.unsafe_unwrap(),
+                # Trigger update on every deployment
+                "Timestamp": self.node.try_get_context("timestamp") or "default"
+            }
+        )
+
+        # Make sure the custom resource runs after the access key is created
+        custom_resource.node.add_dependency(self.access_key)
+
+        # Outputs
+        CfnOutput(
+            self, "TopicArn",
+            value=self.topic.topic_arn,
+            description="ARN of the SNS topic for access key notifications"
+        )
+
+        CfnOutput(
+            self, "UserName",
+            value=self.user.user_name,
+            description="Name of the IAM user created"
+        )
+
+        CfnOutput(
+            self, "AccessKeyId",
+            value=self.access_key.access_key_id,
+            description="Access Key ID (also sent to SNS)"
+        )
+
+    def _get_lambda_code(self) -> str:
+        """Returns the inline Lambda code for publishing to SNS"""
+        return '''
 import json
 import boto3
-import tarfile
-import tempfile
-import os
 import logging
-import pymysql
-import ssl
-from urllib.parse import unquote_plus
-from typing import Dict, Any, List
-import botocore.session
-from botocore.credentials import Credentials
+from datetime import datetime
 
-# Configure logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize AWS clients
-s3_client = boto3.client('s3')
-secrets_client = boto3.client('secretsmanager')
-rds_client = boto3.client('rds')
+sns_client = boto3.client('sns')
 
-
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event, context):
     """
-    Lambda function to process SQS messages containing S3 event notifications
-    for tar/tar.gz files, extract SQL files, and execute upserts against MySQL RDS.
+    Custom Resource handler that publishes access key details to SNS
     """
+    logger.info(f"Received event: {json.dumps(event, default=str)}")
     
-    # Get environment variables
-    bucket_name = os.environ.get('BUCKET_NAME')
-    db_endpoint = os.environ.get('DB_ENDPOINT')
-    db_port = int(os.environ.get('DB_PORT', '3306'))
-    db_name = os.environ.get('DB_NAME')
-    db_secret_arn = os.environ.get('DB_SECRET_ARN')
-    db_resource_id = os.environ.get('DB_RESOURCE_ID')
+    request_type = event['RequestType']
     
-    if not all([bucket_name, db_endpoint, db_name, db_secret_arn, db_resource_id]):
-        logger.error("Required environment variables not set")
-        return {
-            'statusCode': 500,
-            'body': json.dumps('Configuration error: Missing required environment variables')
-        }
-    
-    # Process SQS records
-    successful_messages = []
-    failed_messages = []
-    
-    for record in event.get('Records', []):
+    # Only send notification on Create and Update
+    if request_type in ['Create', 'Update']:
         try:
-            # Parse SQS message
-            message_body = json.loads(record['body'])
+            # Extract properties from the event
+            props = event['ResourceProperties']
+            topic_arn = props['TopicArn']
+            user_name = props['UserName']
+            access_key_id = props['AccessKeyId']
+            secret_access_key = props['SecretAccessKey']
             
-            # Handle S3 event notification
-            if 'Records' in message_body:
-                for s3_record in message_body['Records']:
-                    if s3_record.get('eventName', '').startswith('ObjectCreated'):
-                        result = process_s3_object(
-                            s3_record, 
-                            bucket_name, 
-                            db_endpoint, 
-                            db_port, 
-                            db_name, 
-                            db_secret_arn,
-                            db_resource_id
-                        )
-                        if result['success']:
-                            successful_messages.append(record['messageId'])
-                        else:
-                            failed_messages.append({
-                                'itemIdentifier': record['messageId'],
-                                'errorMessage': result['error']
-                            })
-            else:
-                logger.warning(f"Unexpected message format: {message_body}")
-                failed_messages.append({
-                    'itemIdentifier': record['messageId'],
-                    'errorMessage': 'Unexpected message format'
-                })
-                
-        except Exception as e:
-            logger.error(f"Error processing record {record.get('messageId', 'unknown')}: {str(e)}")
-            failed_messages.append({
-                'itemIdentifier': record['messageId'],
-                'errorMessage': str(e)
-            })
-    
-    # Return batch failure information for SQS
-    response = {
-        'statusCode': 200,
-        'body': json.dumps({
-            'successful': len(successful_messages),
-            'failed': len(failed_messages)
-        })
-    }
-    
-    if failed_messages:
-        response['batchItemFailures'] = failed_messages
-    
-    return response
-
-
-def process_s3_object(s3_record: Dict[str, Any], bucket_name: str, db_endpoint: str, 
-                     db_port: int, db_name: str, db_secret_arn: str, db_resource_id: str) -> Dict[str, Any]:
-    """
-    Process a single S3 object from the event notification.
-    
-    Args:
-        s3_record: S3 event record
-        bucket_name: Name of the S3 bucket
-        db_endpoint: RDS endpoint
-        db_port: RDS port
-        db_name: Database name
-        db_secret_arn: ARN of the database credentials secret
-        db_resource_id: RDS instance resource ID
-        
-    Returns:
-        Dict with success status and error message if applicable
-    """
-    
-    try:
-        # Extract object information
-        object_key = unquote_plus(s3_record['s3']['object']['key'])
-        object_size = s3_record['s3']['object']['size']
-        
-        logger.info(f"Processing object: {object_key} (size: {object_size} bytes)")
-        
-        # Check if it's a tar or tar.gz file
-        if not (object_key.lower().endswith('.tar') or object_key.lower().endswith('.tar.gz')):
-            logger.info(f"Skipping non-tar file: {object_key}")
-            return {'success': True, 'message': 'Skipped non-tar file'}
-        
-        # Download and extract the tar file, then execute SQL
-        return extract_and_execute_sql(
-            bucket_name, 
-            object_key, 
-            db_endpoint, 
-            db_port, 
-            db_name, 
-            db_secret_arn,
-            db_resource_id
-        )
-        
-    except Exception as e:
-        error_msg = f"Error processing S3 object: {str(e)}"
-        logger.error(error_msg)
-        return {'success': False, 'error': error_msg}
-
-
-def extract_and_execute_sql(bucket_name: str, object_key: str, db_endpoint: str, 
-                           db_port: int, db_name: str, db_secret_arn: str, db_resource_id: str) -> Dict[str, Any]:
-    """
-    Download tar file from S3, extract SQL files, and execute them against RDS MySQL.
-    
-    Args:
-        bucket_name: Name of the S3 bucket
-        object_key: Key of the tar file in S3
-        db_endpoint: RDS endpoint
-        db_port: RDS port
-        db_name: Database name
-        db_secret_arn: ARN of the database credentials secret
-        db_resource_id: RDS instance resource ID
-        
-    Returns:
-        Dict with success status and error message if applicable
-    """
-    
-    with tempfile.TemporaryDirectory() as temp_dir:
-        try:
-            # Download the tar file
-            tar_path = os.path.join(temp_dir, 'archive.tar')
-            
-            logger.info(f"Downloading {object_key} from bucket {bucket_name}")
-            s3_client.download_file(bucket_name, object_key, tar_path)
-            
-            # Extract the tar file
-            extract_dir = os.path.join(temp_dir, 'extracted')
-            os.makedirs(extract_dir, exist_ok=True)
-            
-            logger.info(f"Extracting {tar_path}")
-            
-            # Determine compression type
-            if object_key.lower().endswith('.tar.gz'):
-                tar_mode = 'r:gz'
-            else:
-                tar_mode = 'r'
-            
-            with tarfile.open(tar_path, tar_mode) as tar:
-                # Security check: prevent path traversal attacks
-                def is_safe_path(path: str) -> bool:
-                    return not (path.startswith('/') or '..' in path or path.startswith('..'))
-                
-                safe_members = [member for member in tar.getmembers() 
-                              if is_safe_path(member.name)]
-                
-                if len(safe_members) != len(tar.getmembers()):
-                    logger.warning(f"Filtered out {len(tar.getmembers()) - len(safe_members)} unsafe paths")
-                
-                tar.extractall(path=extract_dir, members=safe_members)
-            
-            # Find and execute SQL files
-            sql_files = find_sql_files(extract_dir)
-            
-            if not sql_files:
-                logger.warning(f"No SQL files found in {object_key}")
-                return {'success': True, 'message': 'No SQL files found in archive'}
-            
-            # Execute SQL files against RDS
-            execution_results = execute_sql_files(
-                sql_files, 
-                db_endpoint, 
-                db_port, 
-                db_name, 
-                db_secret_arn,
-                db_resource_id
-            )
-            
-            logger.info(f"Successfully processed {len(sql_files)} SQL files from {object_key}")
-            
-            return {
-                'success': True, 
-                'message': f'Executed {len(sql_files)} SQL files',
-                'sql_files': [os.path.basename(f) for f in sql_files],
-                'execution_results': execution_results
+            # Create the message with access key details
+            message_data = {
+                "username": user_name,
+                "access_key_id": access_key_id,
+                "secret_access_key": secret_access_key,
+                "create_date": datetime.utcnow().isoformat() + "Z"
             }
             
-        except tarfile.TarError as e:
-            error_msg = f"Error extracting tar file {object_key}: {str(e)}"
-            logger.error(error_msg)
-            return {'success': False, 'error': error_msg}
+            # Create a formatted message for email
+            email_message = f"""
+IAM Access Key Created
+======================
+
+User Name: {user_name}
+Access Key ID: {access_key_id}
+Secret Access Key: {secret_access_key}
+Create Date: {message_data['create_date']}
+
+IMPORTANT: Store these credentials securely. The secret access key will not be shown again.
+
+Configure AWS CLI:
+------------------
+aws configure set aws_access_key_id {access_key_id}
+aws configure set aws_secret_access_key {secret_access_key}
+
+Or set environment variables:
+-----------------------------
+export AWS_ACCESS_KEY_ID={access_key_id}
+export AWS_SECRET_ACCESS_KEY={secret_access_key}
+"""
+            
+            # Publish to SNS with both JSON and formatted text
+            response = sns_client.publish(
+                TopicArn=topic_arn,
+                Subject=f"New IAM Access Key Created: {user_name}",
+                Message=email_message,
+                MessageAttributes={
+                    'username': {'DataType': 'String', 'StringValue': user_name},
+                    'access_key_id': {'DataType': 'String', 'StringValue': access_key_id},
+                    'create_date': {'DataType': 'String', 'StringValue': message_data['create_date']}
+                }
+            )
+            
+            logger.info(f"Successfully published to SNS. MessageId: {response['MessageId']}")
+            logger.info(f"Message data: {json.dumps(message_data)}")
+            
+            return {
+                'PhysicalResourceId': f"AccessKeyNotification-{user_name}",
+                'Data': {
+                    'MessageId': response['MessageId']
+                }
+            }
             
         except Exception as e:
-            error_msg = f"Error processing tar file {object_key}: {str(e)}"
-            logger.error(error_msg)
-            return {'success': False, 'error': error_msg}
-
-
-def find_sql_files(directory: str) -> List[str]:
-    """
-    Recursively find all SQL files in the extracted directory.
+            logger.error(f"Error publishing to SNS: {str(e)}")
+            raise
     
-    Args:
-        directory: Directory to search
-        
-    Returns:
-        List of SQL file paths
-    """
-    sql_files = []
-    
-    for root, dirs, files in os.walk(directory):
-        for file in files:
-            if file.lower().endswith('.sql'):
-                sql_files.append(os.path.join(root, file))
-    
-    # Sort files to ensure consistent execution order
-    sql_files.sort()
-    return sql_files
-
-
-def get_db_credentials(secret_arn: str) -> Dict[str, str]:
-    """
-    Retrieve database credentials from AWS Secrets Manager.
-    
-    Args:
-        secret_arn: ARN of the secret containing database credentials
-        
-    Returns:
-        Dictionary with username and password
-    """
-    try:
-        response = secrets_client.get_secret_value(SecretId=secret_arn)
-        secret_data = json.loads(response['SecretString'])
+    elif request_type == 'Delete':
+        logger.info("Delete request - no action needed")
         return {
-            'username': secret_data['username'],
-            'password': secret_data['password']
+            'PhysicalResourceId': event.get('PhysicalResourceId', 'AccessKeyNotification')
         }
-    except Exception as e:
-        logger.error(f"Error retrieving database credentials: {str(e)}")
-        raise
-
-
-def generate_iam_auth_token(db_endpoint: str, db_port: int, username: str, region: str) -> str:
-    """
-    Generate an IAM authentication token for RDS.
     
-    Args:
-        db_endpoint: RDS endpoint
-        db_port: RDS port
-        username: Database username
-        region: AWS region
-        
-    Returns:
-        IAM authentication token
+    return {
+        'PhysicalResourceId': event.get('PhysicalResourceId', 'AccessKeyNotification')
+    }
+'''
+
+
+class AccessKeySnsNotificationWithJsonStack(Stack):
     """
-    try:
-        session = botocore.session.get_session()
-        client = session.create_client('rds', region_name=region)
-        
-        token = client.generate_db_auth_token(
-            DBHostname=db_endpoint,
-            Port=db_port,
-            DBUsername=username,
-            Region=region
+    Alternative stack that sends pure JSON to SNS (useful for Lambda subscribers)
+    """
+
+    def __init__(
+        self, 
+        scope: Construct, 
+        construct_id: str,
+        email_address: str = "admin@example.com",
+        user_name: str = "cdk-json-notification-user",
+        **kwargs
+    ) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create SNS topic
+        self.topic = sns.Topic(
+            self, "AccessKeyJsonTopic",
+            display_name="IAM Access Key JSON Notifications",
+            topic_name="iam-access-key-json-notifications"
         )
-        
-        return token
-    except Exception as e:
-        logger.error(f"Error generating IAM auth token: {str(e)}")
-        raise
 
+        # Add email subscription
+        self.topic.add_subscription(
+            sns_subs.EmailSubscription(email_address)
+        )
 
-def execute_sql_files(sql_files: List[str], db_endpoint: str, db_port: int, 
-                     db_name: str, db_secret_arn: str, db_resource_id: str) -> List[Dict[str, Any]]:
-    """
-    Execute SQL files against the MySQL RDS instance using IAM authentication.
-    
-    Args:
-        sql_files: List of SQL file paths
-        db_endpoint: RDS endpoint
-        db_port: RDS port
-        db_name: Database name
-        db_secret_arn: ARN of the database credentials secret
-        db_resource_id: RDS instance resource ID
-        
-    Returns:
-        List of execution results
-    """
-    results = []
-    
-    # Get AWS region
-    region = os.environ.get('AWS_REGION', 'us-east-1')
-    
-    # Get database credentials for IAM user creation (if needed)
-    credentials = get_db_credentials(db_secret_arn)
-    master_username = credentials['username']
-    master_password = credentials['password']
-    
-    # Create IAM database user if it doesn't exist
-    iam_username = 'lambda_user'
-    
-    try:
-        # First, connect as master user to create IAM user if needed
-        logger.info("Connecting as master user to set up IAM authentication")
-        
-        connection = pymysql.connect(
-            host=db_endpoint,
-            port=db_port,
-            user=master_username,
-            password=master_password,
-            database=db_name,
-            ssl_ca='/opt/rds-ca-2019-root.pem',
-            ssl_verify_cert=True,
-            ssl_verify_identity=True
+        # Create IAM user
+        self.user = iam.User(
+            self, "JsonNotificationUser",
+            user_name=user_name,
+            description="User created by CDK with JSON SNS notification"
         )
-        
-        with connection.cursor() as cursor:
-            # Create IAM user if it doesn't exist
-            cursor.execute(f"SELECT User FROM mysql.user WHERE User = '{iam_username}'")
-            if not cursor.fetchone():
-                logger.info(f"Creating IAM user: {iam_username}")
-                cursor.execute(f"CREATE USER '{iam_username}' IDENTIFIED WITH AWSAuthenticationPlugin AS 'RDS'")
-                cursor.execute(f"GRANT ALL PRIVILEGES ON {db_name}.* TO '{iam_username}'")
-                cursor.execute("FLUSH PRIVILEGES")
-                connection.commit()
-                logger.info(f"IAM user {iam_username} created successfully")
-        
-        connection.close()
-        
-        # Now connect using IAM authentication
-        logger.info("Connecting using IAM authentication")
-        
-        iam_token = generate_iam_auth_token(db_endpoint, db_port, iam_username, region)
-        
-        iam_connection = pymysql.connect(
-            host=db_endpoint,
-            port=db_port,
-            user=iam_username,
-            password=iam_token,
-            database=db_name,
-            ssl_ca='/opt/rds-ca-2019-root.pem',
-            ssl_verify_cert=True,
-            ssl_verify_identity=True
+
+        # Create access key
+        self.access_key = iam.AccessKey(
+            self, "JsonNotificationAccessKey",
+            user=self.user
         )
-        
-        # Execute each SQL file
-        for sql_file in sql_files:
-            try:
-                logger.info(f"Executing SQL file: {os.path.basename(sql_file)}")
-                
-                with open(sql_file, 'r', encoding='utf-8') as f:
-                    sql_content = f.read()
-                
-                # Split SQL content into individual statements
-                statements = [stmt.strip() for stmt in sql_content.split(';') if stmt.strip()]
-                
-                with iam_connection.cursor() as cursor:
-                    executed_statements = 0
-                    for statement in statements:
-                        if statement:
-                            cursor.execute(statement)
-                            executed_statements += 1
-                    
-                    iam_connection.commit()
-                
-                results.append({
-                    'file': os.path.basename(sql_file),
-                    'success': True,
-                    'statements_executed': executed_statements,
-                    'message': f'Successfully executed {executed_statements} statements'
-                })
-                
-                logger.info(f"Successfully executed {executed_statements} statements from {os.path.basename(sql_file)}")
-                
-            except Exception as e:
-                error_msg = f"Error executing SQL file {os.path.basename(sql_file)}: {str(e)}"
-                logger.error(error_msg)
-                results.append({
-                    'file': os.path.basename(sql_file),
-                    'success': False,
-                    'error': error_msg
-                })
-                # Continue with next file even if one fails
-        
-        iam_connection.close()
-        
-    except Exception as e:
-        error_msg = f"Database connection error: {str(e)}"
-        logger.error(error_msg)
-        results.append({
-            'success': False,
-            'error': error_msg
-        })
+
+        # Lambda for JSON notification
+        notification_lambda = lambda_.Function(
+            self, "JsonNotificationFunction",
+            runtime=lambda_.Runtime.PYTHON_3_12,
+            handler="index.handler",
+            code=lambda_.Code.from_inline(self._get_json_lambda_code()),
+            timeout=Duration.seconds(30)
+        )
+
+        self.topic.grant_publish(notification_lambda)
+
+        # Custom Resource Provider
+        provider = cr.Provider(
+            self, "JsonNotificationProvider",
+            on_event_handler=notification_lambda
+        )
+
+        # Custom Resource
+        custom_resource = CustomResource(
+            self, "JsonNotificationCustomResource",
+            service_token=provider.service_token,
+            properties={
+                "TopicArn": self.topic.topic_arn,
+                "UserName": self.user.user_name,
+                "AccessKeyId": self.access_key.access_key_id,
+                "SecretAccessKey": self.access_key.secret_access_key.unsafe_unwrap(),
+                "Timestamp": self.node.try_get_context("timestamp") or "default"
+            }
+        )
+
+        custom_resource.node.add_dependency(self.access_key)
+
+        # Outputs
+        CfnOutput(
+            self, "TopicArn",
+            value=self.topic.topic_arn,
+            description="ARN of the SNS topic"
+        )
+
+        CfnOutput(
+            self, "UserName",
+            value=self.user.user_name,
+            description="IAM user name"
+        )
+
+    def _get_json_lambda_code(self) -> str:
+        """Returns Lambda code that sends pure JSON to SNS"""
+        return '''
+import json
+import boto3
+import logging
+from datetime import datetime
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+sns_client = boto3.client('sns')
+
+def handler(event, context):
+    """Publishes access key details as JSON to SNS"""
+    logger.info(f"Received event: {json.dumps(event, default=str)}")
     
-    return results
+    request_type = event['RequestType']
+    
+    if request_type in ['Create', 'Update']:
+        try:
+            props = event['ResourceProperties']
+            
+            # Create JSON message
+            message_data = {
+                "username": props['UserName'],
+                "access_key_id": props['AccessKeyId'],
+                "secret_access_key": props['SecretAccessKey'],
+                "create_date": datetime.utcnow().isoformat() + "Z",
+                "event_type": "access_key_created"
+            }
+            
+            # Publish as pure JSON
+            response = sns_client.publish(
+                TopicArn=props['TopicArn'],
+                Subject=f"IAM Access Key Created: {props['UserName']}",
+                Message=json.dumps(message_data, indent=2)
+            )
+            
+            logger.info(f"Published to SNS. MessageId: {response['MessageId']}")
+            logger.info(f"Message: {json.dumps(message_data, indent=2)}")
+            
+            return {
+                'PhysicalResourceId': f"JsonNotification-{props['UserName']}",
+                'Data': {'MessageId': response['MessageId']}
+            }
+            
+        except Exception as e:
+            logger.error(f"Error: {str(e)}")
+            raise
+    
+    return {'PhysicalResourceId': event.get('PhysicalResourceId', 'JsonNotification')}
+'''
+

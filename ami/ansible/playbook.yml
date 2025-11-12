@@ -1,0 +1,182 @@
+---
+- name: Provision Alma Linux AMI
+  hosts: alma_linux
+  become: yes
+  gather_facts: yes
+
+  vars:
+    timezone: UTC
+    hostname: "alma-linux-base"
+
+  tasks:
+    - name: Update system packages
+      dnf:
+        name: "*"
+        state: latest
+        update_cache: yes
+
+    - name: Install essential packages
+      dnf:
+        name:
+          - curl
+          - wget
+          - git
+          - vim
+          - htop
+          - net-tools
+          - bind-utils
+          - yum-utils
+          - cloud-utils
+          - cloud-init
+        state: present
+
+    - name: Configure timezone
+      timezone:
+        name: "{{ timezone }}"
+
+    - name: Set hostname
+      hostname:
+        name: "{{ hostname }}"
+
+    - name: Configure cloud-init
+      lineinfile:
+        path: /etc/cloud/cloud.cfg
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - { regexp: "^preserve_hostname:", line: "preserve_hostname: false" }
+        - { regexp: "^disable_root:", line: "disable_root: false" }
+
+    - name: Enable cloud-init services
+      systemd:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+      loop:
+        - cloud-init
+        - cloud-init-local
+        - cloud-config
+        - cloud-final
+
+    - name: Configure SSH
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        backup: yes
+      loop:
+        - { regexp: "^PasswordAuthentication", line: "PasswordAuthentication no" }
+        - { regexp: "^PermitRootLogin", line: "PermitRootLogin no" }
+        - { regexp: "^PubkeyAuthentication", line: "PubkeyAuthentication yes" }
+      notify: restart sshd
+
+    - name: Create common directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - /opt/applications
+        - /var/log/applications
+        - /etc/applications
+
+    - name: Configure log rotation
+      copy:
+        content: |
+          /var/log/applications/*.log {
+              daily
+              rotate 7
+              compress
+              delaycompress
+              missingok
+              notifempty
+              create 0644 root root
+          }
+        dest: /etc/logrotate.d/applications
+        mode: "0644"
+
+    - name: Set up AWS CLI v2 (optional)
+      block:
+        - name: Download AWS CLI v2
+          get_url:
+            url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+            dest: /tmp/awscliv2.zip
+            mode: "0644"
+
+        - name: Install unzip
+          dnf:
+            name: unzip
+            state: present
+
+        - name: Extract AWS CLI
+          unarchive:
+            src: /tmp/awscliv2.zip
+            dest: /tmp
+            remote_src: yes
+
+        - name: Install AWS CLI
+          command: /tmp/aws/install
+          args:
+            creates: /usr/local/bin/aws
+
+        - name: Clean up AWS CLI installer
+          file:
+            path: "{{ item }}"
+            state: absent
+          loop:
+            - /tmp/awscliv2.zip
+            - /tmp/aws
+      when: install_aws_cli | default(false)
+
+    - name: Configure system limits
+      pam_limits:
+        domain: "*"
+        limit_type: "{{ item.limit_type }}"
+        limit_item: "{{ item.limit_item }}"
+        value: "{{ item.value }}"
+      loop:
+        - { limit_type: "soft", limit_item: "nofile", value: "65536" }
+        - { limit_type: "hard", limit_item: "nofile", value: "65536" }
+
+    - name: Disable unnecessary services
+      systemd:
+        name: "{{ item }}"
+        enabled: no
+        state: stopped
+      loop:
+        - postfix
+        - firewalld
+      ignore_errors: yes
+
+    - name: Configure kernel parameters
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+        state: present
+        sysctl_set: yes
+        reload: yes
+      loop:
+        - { name: "net.ipv4.ip_forward", value: "0" }
+        - { name: "net.ipv4.conf.all.send_redirects", value: "0" }
+        - { name: "net.ipv4.conf.default.send_redirects", value: "0" }
+        - { name: "net.ipv4.conf.all.accept_redirects", value: "0" }
+        - { name: "net.ipv4.conf.default.accept_redirects", value: "0" }
+        - { name: "net.ipv4.tcp_syncookies", value: "1" }
+        - { name: "fs.file-max", value: "2097152" }
+
+    - name: Create motd
+      copy:
+        content: |
+          ============================================
+          Alma Linux Base AMI
+          Provisioned with Packer and Ansible
+          ============================================
+        dest: /etc/motd
+        mode: "0644"
+
+  handlers:
+    - name: restart sshd
+      systemd:
+        name: sshd
+        state: restarted
+

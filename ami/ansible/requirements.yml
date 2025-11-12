@@ -1,0 +1,13 @@
+---
+# Ansible Galaxy requirements file
+# Install additional roles and collections if needed
+
+# Example: Install a role
+# - name: geerlingguy.docker
+#   version: 6.0.0
+
+# Example: Install a collection
+# - name: community.general
+#   type: collection
+#   version: 7.0.0
+

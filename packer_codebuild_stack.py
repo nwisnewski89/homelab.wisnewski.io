@@ -1,41 +1,44 @@
 #!/usr/bin/env python3
 """
-CDK Stack for CodeBuild Project that runs Packer builds
+CDK Stack for CodePipeline with CodeStar Connection to GitHub
 
-This stack creates a CodeBuild project configured to run Packer builds
-for creating AMIs. The project includes:
-- Packer installation
-- IAM permissions for EC2, AMI creation, KMS
-- Environment variables for Packer configuration
-- Build commands to execute Packer
+This stack creates a CodePipeline that:
+- Uses CodeStar Connection for GitHub source
+- Runs Packer builds directly via CodeBuild
+- Is triggered automatically on GitHub pushes
 """
 
 from aws_cdk import (
     Stack,
+    aws_codepipeline as codepipeline,
+    aws_codepipeline_actions as cpactions,
     aws_codebuild as codebuild,
     aws_iam as iam,
     aws_s3 as s3,
-    aws_kms as kms,
     aws_logs as logs,
     CfnOutput,
     Duration,
     RemovalPolicy,
 )
 from constructs import Construct
-from typing import Optional
+from typing import Optional, List
 
 
-class PackerCodeBuildStack(Stack):
-    """Stack that creates a CodeBuild project for Packer AMI builds"""
+class PackerCodePipelineStack(Stack):
+    """Stack that creates a CodePipeline with CodeStar Connection for Packer builds"""
 
     def __init__(
         self,
         scope: Construct,
         construct_id: str,
+        code_star_connection_arn: str,
+        github_owner: str,
+        github_repo: str,
+        github_branch: str = "main",
         packer_file_path: str = "packer-alma-linux.pkr.hcl",
         kms_key_id: Optional[str] = None,
         aws_region: Optional[str] = None,
-        target_accounts: Optional[list] = None,
+        target_accounts: Optional[List[str]] = None,
         ami_name_prefix: str = "alma-linux-provisioned",
         instance_type: str = "t3.medium",
         **kwargs
@@ -43,6 +46,10 @@ class PackerCodeBuildStack(Stack):
         super().__init__(scope, construct_id, **kwargs)
 
         # Configuration
+        self.code_star_connection_arn = code_star_connection_arn
+        self.github_owner = github_owner
+        self.github_repo = github_repo
+        self.github_branch = github_branch
         self.packer_file_path = packer_file_path
         self.kms_key_id = kms_key_id
         self.aws_region = aws_region or self.region
@@ -50,24 +57,24 @@ class PackerCodeBuildStack(Stack):
         self.ami_name_prefix = ami_name_prefix
         self.instance_type = instance_type
 
-        # Create S3 bucket for build artifacts
+        # Create S3 bucket for pipeline artifacts
         self.artifact_bucket = self.create_artifact_bucket()
 
-        # Create IAM role for CodeBuild
-        self.codebuild_role = self.create_codebuild_role()
-
-        # Create CodeBuild project
+        # Create CodeBuild project for Packer
         self.codebuild_project = self.create_codebuild_project()
+
+        # Create CodePipeline
+        self.pipeline = self.create_pipeline()
 
         # Create outputs
         self.create_outputs()
 
     def create_artifact_bucket(self) -> s3.Bucket:
-        """Create S3 bucket for CodeBuild artifacts"""
+        """Create S3 bucket for CodePipeline artifacts"""
         return s3.Bucket(
             self,
-            "CodeBuildArtifactBucket",
-            bucket_name=f"packer-codebuild-artifacts-{self.account}-{self.region}",
+            "PipelineArtifactBucket",
+            bucket_name=f"packer-pipeline-artifacts-{self.account}-{self.region}",
             versioned=True,
             encryption=s3.BucketEncryption.S3_MANAGED,
             removal_policy=RemovalPolicy.DESTROY,  # Change for production
@@ -81,11 +88,13 @@ class PackerCodeBuildStack(Stack):
             ]
         )
 
-    def create_codebuild_role(self) -> iam.Role:
-        """Create IAM role for CodeBuild with necessary permissions"""
-        role = iam.Role(
+    def create_codebuild_project(self) -> codebuild.Project:
+        """Create CodeBuild project configured for Packer builds"""
+        
+        # Create IAM role for CodeBuild
+        codebuild_role = iam.Role(
             self,
-            "CodeBuildRole",
+            "PackerCodeBuildRole",
             assumed_by=iam.ServicePrincipal("codebuild.amazonaws.com"),
             description="Role for CodeBuild to run Packer builds",
             managed_policies=[
@@ -96,7 +105,7 @@ class PackerCodeBuildStack(Stack):
         )
 
         # EC2 permissions for Packer
-        role.add_to_policy(
+        codebuild_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -126,7 +135,7 @@ class PackerCodeBuildStack(Stack):
         )
 
         # AMI permissions
-        role.add_to_policy(
+        codebuild_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -143,7 +152,7 @@ class PackerCodeBuildStack(Stack):
 
         # KMS permissions for encrypted AMIs
         if self.kms_key_id:
-            role.add_to_policy(
+            codebuild_role.add_to_policy(
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     actions=[
@@ -158,7 +167,7 @@ class PackerCodeBuildStack(Stack):
             )
         else:
             # Allow access to default KMS keys if no specific key provided
-            role.add_to_policy(
+            codebuild_role.add_to_policy(
                 iam.PolicyStatement(
                     effect=iam.Effect.ALLOW,
                     actions=[
@@ -173,10 +182,10 @@ class PackerCodeBuildStack(Stack):
             )
 
         # S3 permissions for artifacts
-        self.artifact_bucket.grant_read_write(role)
+        self.artifact_bucket.grant_read_write(codebuild_role)
 
         # SSM permissions (if using SSM for instance access)
-        role.add_to_policy(
+        codebuild_role.add_to_policy(
             iam.PolicyStatement(
                 effect=iam.Effect.ALLOW,
                 actions=[
@@ -188,11 +197,6 @@ class PackerCodeBuildStack(Stack):
             )
         )
 
-        return role
-
-    def create_codebuild_project(self) -> codebuild.Project:
-        """Create CodeBuild project configured for Packer builds"""
-        
         # Build environment variables
         environment_variables = {
             "PACKER_FILE": codebuild.BuildEnvironmentVariable(
@@ -213,7 +217,7 @@ class PackerCodeBuildStack(Stack):
         if self.kms_key_id:
             environment_variables["KMS_KEY_ID"] = codebuild.BuildEnvironmentVariable(
                 value=self.kms_key_id,
-                type=codebuild.BuildEnvironmentVariableType.SECRETS_MANAGER
+                type=codebuild.BuildEnvironmentVariableType.PLAINTEXT
             )
 
         # Add target accounts if provided
@@ -225,9 +229,9 @@ class PackerCodeBuildStack(Stack):
         project = codebuild.Project(
             self,
             "PackerBuildProject",
-            project_name=f"packer-ami-build-{self.region}",
+            project_name=f"packer-build-{self.region}",
             description="CodeBuild project for building AMIs with Packer",
-            role=self.codebuild_role,
+            role=codebuild_role,
             environment=codebuild.BuildEnvironment(
                 build_image=codebuild.LinuxBuildImage.STANDARD_7_0,  # Amazon Linux 2023
                 compute_type=codebuild.ComputeType.LARGE,  # Use LARGE for Packer builds
@@ -307,7 +311,7 @@ class PackerCodeBuildStack(Stack):
                     log_group=logs.LogGroup(
                         self,
                         "CodeBuildLogGroup",
-                        log_group_name=f"/aws/codebuild/packer-ami-build-{self.region}",
+                        log_group_name=f"/aws/codebuild/packer-build-{self.region}",
                         retention=logs.RetentionDays.ONE_WEEK,
                         removal_policy=RemovalPolicy.DESTROY
                     )
@@ -319,8 +323,68 @@ class PackerCodeBuildStack(Stack):
 
         return project
 
+    def create_pipeline(self) -> codepipeline.Pipeline:
+        """Create CodePipeline with CodeStar Connection source"""
+        
+        # Source artifact
+        source_output = codepipeline.Artifact("SourceOutput")
+
+        # Create the pipeline
+        pipeline = codepipeline.Pipeline(
+            self,
+            "PackerPipeline",
+            pipeline_name=f"packer-build-pipeline-{self.region}",
+            artifact_bucket=self.artifact_bucket,
+            restart_execution_on_update=True,
+        )
+
+        # Source stage with CodeStar Connection
+        pipeline.add_stage(
+            stage_name="Source",
+            actions=[
+                cpactions.CodeStarConnectionsSourceAction(
+                    action_name="GitHub_Source",
+                    owner=self.github_owner,
+                    repo=self.github_repo,
+                    branch=self.github_branch,
+                    connection_arn=self.code_star_connection_arn,
+                    output=source_output,
+                    trigger_on_push=True,  # Automatically trigger on GitHub pushes
+                )
+            ]
+        )
+
+        # Build stage with Packer
+        pipeline.add_stage(
+            stage_name="Build",
+            actions=[
+                cpactions.CodeBuildAction(
+                    action_name="Packer_Build",
+                    project=self.codebuild_project,
+                    input=source_output,
+                    outputs=[codepipeline.Artifact("BuildOutput")],
+                )
+            ]
+        )
+
+        return pipeline
+
     def create_outputs(self):
         """Create CloudFormation outputs"""
+        CfnOutput(
+            self,
+            "PipelineName",
+            value=self.pipeline.pipeline_name,
+            description="Name of the CodePipeline"
+        )
+
+        CfnOutput(
+            self,
+            "PipelineArn",
+            value=self.pipeline.pipeline_arn,
+            description="ARN of the CodePipeline"
+        )
+
         CfnOutput(
             self,
             "CodeBuildProjectName",
@@ -330,15 +394,18 @@ class PackerCodeBuildStack(Stack):
 
         CfnOutput(
             self,
-            "CodeBuildProjectArn",
-            value=self.codebuild_project.project_arn,
-            description="ARN of the CodeBuild project"
+            "ArtifactBucketName",
+            value=self.artifact_bucket.bucket_name,
+            description="S3 bucket for pipeline artifacts"
         )
 
         CfnOutput(
             self,
-            "ArtifactBucketName",
-            value=self.artifact_bucket.bucket_name,
-            description="S3 bucket for build artifacts"
+            "PipelineUrl",
+            value=(
+                f"https://{self.region}.console.aws.amazon.com/codesuite/codepipeline/"
+                f"pipelines/{self.pipeline.pipeline_name}/view"
+            ),
+            description="URL to view the pipeline in AWS Console"
         )
 

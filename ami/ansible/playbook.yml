@@ -1,14 +1,47 @@
 ---
-- name: Provision Alma Linux AMI
-  hosts: alma_linux
+- name: Provision RHEL AMI from base certificate AMI
+  hosts: rhel
   become: yes
   gather_facts: yes
 
   vars:
     timezone: UTC
-    hostname: "alma-linux-base"
+    hostname: "rhel-base"
 
   tasks:
+    - name: Verify custom certificates from base AMI
+      block:
+        - name: Check for custom certificates in anchors directory
+          stat:
+            path: /etc/pki/ca-trust/source/anchors
+          register: anchors_dir
+
+        - name: List certificates in anchors directory
+          command: ls -la /etc/pki/ca-trust/source/anchors/
+          register: cert_list
+          changed_when: false
+          when: anchors_dir.stat.exists
+
+        - name: Display certificate information
+          debug:
+            msg: "Found custom certificates: {{ cert_list.stdout_lines | default([]) }}"
+          when: anchors_dir.stat.exists
+
+        - name: Refresh certificate trust store
+          command: update-ca-trust extract
+          changed_when: true
+
+        - name: Verify certificate trust (if trust command available)
+          command: trust list | head -20
+          register: trust_list
+          changed_when: false
+          failed_when: false
+
+        - name: Display trusted certificates
+          debug:
+            msg: "{{ trust_list.stdout_lines | default(['Trust list not available']) }}"
+          when: trust_list.rc == 0
+
     - name: Update system packages
       dnf:
         name: "*"
@@ -29,6 +62,15 @@
           - cloud-utils
           - cloud-init
         state: present
+
+    - name: Add Docker repository
+      yum_repository:
+        name: docker-ce
+        description: Docker CE Stable
+        baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+        gpgcheck: yes
+        gpgkey: https://download.docker.com/linux/centos/gpg
+        enabled: yes
 
     - name: Configure timezone
       timezone:
@@ -164,12 +206,17 @@
         - { name: "net.ipv4.tcp_syncookies", value: "1" }
         - { name: "fs.file-max", value: "2097152" }
 
+    - name: Final certificate trust refresh
+      command: update-ca-trust extract
+      changed_when: true
+
     - name: Create motd
       copy:
         content: |
           ============================================
-          Alma Linux Base AMI
+          RHEL Base AMI
           Provisioned with Packer and Ansible
+          Based on custom certificate AMI
           ============================================
         dest: /etc/motd
         mode: "0644"

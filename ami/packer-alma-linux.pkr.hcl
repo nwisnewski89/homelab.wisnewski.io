@@ -37,9 +37,14 @@ variable "instance_type" {
   default     = "t3.medium"
 }
 
+variable "source_ami_id" {
+  type        = string
+  description = "Source AMI ID (base RHEL image with custom certificates)"
+}
+
 variable "ssh_username" {
   type        = string
-  description = "SSH username for Alma Linux"
+  description = "SSH username for RHEL (typically ec2-user)"
   default     = "ec2-user"
 }
 
@@ -61,19 +66,9 @@ variable "security_group_ids" {
   default     = []
 }
 
-source "amazon-ebs" "alma_linux" {
-  region        = var.aws_region
-  # Use source_ami_filter to find latest Alma Linux 9 AMI
-  source_ami_filter {
-    filters = {
-      name                = "almalinux-9-*-x86_64"
-      architecture        = "x86_64"
-      virtualization-type = "hvm"
-      root-device-type    = "ebs"
-    }
-    most_recent = true
-    owners      = ["792107900819"] # AlmaLinux OS Foundation
-  }
+source "amazon-ebs" "rhel_base" {
+  region       = var.aws_region
+  source_ami   = var.source_ami_id
   instance_type = var.instance_type
   ssh_username  = var.ssh_username
 
@@ -84,7 +79,7 @@ source "amazon-ebs" "alma_linux" {
 
   # AMI configuration
   ami_name        = "${var.ami_name_prefix}-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-  ami_description = "Alma Linux AMI provisioned with Ansible"
+  ami_description = "RHEL AMI provisioned with Ansible (based on custom certificate AMI)"
 
   # Encryption configuration
   encrypt_boot = true
@@ -96,8 +91,8 @@ source "amazon-ebs" "alma_linux" {
   # Tags
   tags = {
     Name        = "${var.ami_name_prefix}-${formatdate("YYYY-MM-DD-hhmm", timestamp())}"
-    OS          = "AlmaLinux"
-    Version     = "9"
+    OS          = "RHEL"
+    BaseAMI     = var.source_ami_id
     Provisioner = "Packer"
     Created     = formatdate("YYYY-MM-DD", timestamp())
   }
@@ -114,11 +109,25 @@ source "amazon-ebs" "alma_linux" {
 }
 
 build {
-  name = "alma-linux-ansible"
+  name = "rhel-ansible"
 
   sources = [
-    "source.amazon-ebs.alma_linux"
+    "source.amazon-ebs.rhel_base"
   ]
+
+  # Pre-provisioner: Verify and refresh certificate trust
+  provisioner "shell" {
+    name = "verify-certificates"
+    inline = [
+      "echo 'Verifying custom certificates from base AMI...'",
+      "sudo ls -la /etc/pki/ca-trust/source/anchors/ || echo 'No custom certificates found in anchors'",
+      "sudo ls -la /etc/pki/ca-trust/source/ || echo 'Checking source directory'",
+      "echo 'Refreshing certificate trust store...'",
+      "sudo update-ca-trust extract",
+      "echo 'Certificate trust store updated'",
+      "sudo trust list | head -20 || echo 'Trust list command not available'"
+    ]
+  }
 
   # Pre-provisioner: Install ansible-core
   provisioner "shell" {
@@ -140,14 +149,17 @@ build {
     galaxy_file       = "ansible/requirements.yml"
     galaxy_force      = true
     galaxy_command    = "ansible-galaxy install -r {{ .GalaxyFile }}"
-    inventory_groups  = ["alma_linux"]
-    inventory_entries = ["alma_linux ansible_connection=local"]
+    inventory_groups  = ["rhel"]
+    inventory_entries = ["rhel ansible_connection=local"]
   }
 
-  # Post-provisioner: Clean up
+  # Post-provisioner: Final certificate trust refresh and cleanup
   provisioner "shell" {
-    name = "cleanup"
+    name = "finalize-certificates-and-cleanup"
     inline = [
+      "echo 'Performing final certificate trust refresh...'",
+      "sudo update-ca-trust extract",
+      "echo 'Cleaning up...'",
       "sudo dnf clean all",
       "sudo rm -rf /tmp/*",
       "sudo rm -rf /var/tmp/*",

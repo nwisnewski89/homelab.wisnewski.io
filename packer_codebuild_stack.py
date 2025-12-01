@@ -246,6 +246,21 @@ class PackerCodePipelineStack(Stack):
                             "python": "3.11"
                         },
                         "commands": [
+                            "echo 'Unpacking source code artifact...'",
+                            "echo 'Current directory: $(pwd)'",
+                            "echo 'Source artifact location: $CODEBUILD_SRC_DIR'",
+                            "ls -la",
+                            # CodePipeline artifacts from CodeStar Connections are typically zipped
+                            # Extract any zip files found in the workspace
+                            "if ls *.zip 1> /dev/null 2>&1; then",
+                            "  echo 'Found zip file(s), extracting...'",
+                            "  for zip in *.zip; do unzip -q \"$zip\" -d . && rm \"$zip\"; done",
+                            "elif [ -d \"$CODEBUILD_SRC_DIR\" ] && [ \"$CODEBUILD_SRC_DIR\" != \"$(pwd)\" ]; then",
+                            "  echo 'Source artifact is in a subdirectory, copying to workspace root...'",
+                            "  cp -r \"$CODEBUILD_SRC_DIR\"/* . 2>/dev/null || true",
+                            "fi",
+                            "echo 'Source code unpacked. Workspace contents:'",
+                            "ls -la",
                             "echo 'Installing Packer...'",
                             "PACKER_VERSION=1.10.0",
                             "wget -q https://releases.hashicorp.com/packer/${PACKER_VERSION}/packer_${PACKER_VERSION}_linux_amd64.zip",

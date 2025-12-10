@@ -20,6 +20,8 @@ from aws_cdk import (
     aws_cloudwatch as cloudwatch,
     aws_cloudwatch_actions as cw_actions,
     aws_sns as sns,
+    aws_sns_subscriptions as sns_subscriptions,
+    aws_elasticloadbalancingv2 as elbv2,
 )
 from constructs import Construct
 
@@ -36,6 +38,7 @@ class CloudWatchMonitoredEc2Stack(Stack):
         instance_name = self.node.try_get_context("instance_name") or "monitored-ubuntu-instance"
         instance_type = self.node.try_get_context("instance_type") or "t3.micro"
         alarm_email = self.node.try_get_context("alarm_email")  # Optional email for alarms
+        target_group_arn = self.node.try_get_context("target_group_arn")  # Optional target group ARN to monitor
 
         # Lookup existing VPC or create new one
         vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
@@ -130,6 +133,12 @@ class CloudWatchMonitoredEc2Stack(Stack):
         self._create_cloudwatch_alarms(
             instance, alarm_topic, instance_name
         )
+
+        # Create CloudWatch alarm for unhealthy target groups (if target group ARN provided)
+        if target_group_arn:
+            self._create_target_group_health_alarm(
+                target_group_arn, alarm_topic
+            )
 
         # Outputs
         CfnOutput(
@@ -351,4 +360,70 @@ class CloudWatchMonitoredEc2Stack(Stack):
             cpu_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
             memory_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
             disk_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
+
+    def _create_target_group_health_alarm(
+        self,
+        target_group_arn: str,
+        alarm_topic: sns.Topic | None,
+    ) -> None:
+        """
+        Create CloudWatch alarm for unhealthy target groups.
+        
+        Args:
+            target_group_arn: ARN of the target group to monitor
+            alarm_topic: Optional SNS topic for alarm notifications
+        """
+        # Parse target group ARN to extract dimensions
+        # Format: arn:aws:elasticloadbalancing:region:account:targetgroup/name/id
+        arn_parts = target_group_arn.split(':')
+        if len(arn_parts) < 6:
+            raise ValueError(f"Invalid target group ARN format: {target_group_arn}")
+        
+        # The last part contains targetgroup/name/id
+        target_group_full_name = arn_parts[-1]
+        # Extract just the name part (the part between targetgroup/ and /id)
+        # Split by '/' and get the name (index 1)
+        name_parts = target_group_full_name.split('/')
+        if len(name_parts) < 3 or name_parts[0] != 'targetgroup':
+            raise ValueError(f"Invalid target group ARN format: {target_group_arn}")
+        
+        target_group_name = name_parts[1]  # The name is the second part
+        
+        # Note: For Application Load Balancer metrics, the LoadBalancer dimension
+        # is optional. The metric will aggregate across all load balancers if not specified.
+        # If you need to monitor a specific load balancer, you can add the LoadBalancer
+        # dimension by looking up the target group or providing it separately.
+        
+        # Create CloudWatch alarm for unhealthy host count
+        unhealthy_alarm = cloudwatch.Alarm(
+            self,
+            "UnhealthyTargetGroupAlarm",
+            alarm_name="alb-unhealthy-targets",
+            metric=cloudwatch.Metric(
+                namespace="AWS/ApplicationELB",
+                metric_name="UnHealthyHostCount",
+                dimensions_map={
+                    "TargetGroup": target_group_name,
+                },
+                period=Duration.minutes(1),
+                statistic="Average",
+            ),
+            threshold=1,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            alarm_description="Alarm when ALB target group has unhealthy targets",
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
+        )
+
+        # Add SNS action if topic is provided
+        if alarm_topic:
+            unhealthy_alarm.add_alarm_action(cw_actions.SnsAction(alarm_topic))
+
+        # Output alarm information
+        CfnOutput(
+            self,
+            "UnhealthyTargetGroupAlarmArn",
+            value=unhealthy_alarm.alarm_arn,
+            description="ARN of the CloudWatch alarm for unhealthy target groups",
+        )
 

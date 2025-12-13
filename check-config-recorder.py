@@ -9,7 +9,7 @@ import sys
 from botocore.exceptions import ClientError, ProfileNotFound, BotoCoreError
 from typing import List, Dict, Optional
 
-
+ 
 def check_config_recorder(profile: str, region: str = "us-east-1") -> Dict[str, any]:
     """
     Check if Config Recorder is enabled for a given AWS profile and region.

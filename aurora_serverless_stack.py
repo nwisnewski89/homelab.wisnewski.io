@@ -19,8 +19,13 @@ from aws_cdk import (
     aws_ec2 as ec2,
     aws_rds as rds,
     aws_logs as logs,
+    aws_lambda as _lambda,
+    aws_iam as iam,
+    aws_s3 as s3,
+    custom_resources as cr,
 )
 from constructs import Construct
+import os
 
 
 class AuroraServerlessStack(Stack):
@@ -36,6 +41,8 @@ class AuroraServerlessStack(Stack):
         database_name: str = "auroradatabase",
         engine: rds.DatabaseClusterEngine = None,
         enable_performance_insights: bool = True,
+        schema_s3_bucket: str = None,
+        schema_s3_key: str = None,
         **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -59,6 +66,15 @@ class AuroraServerlessStack(Stack):
             engine=engine,
             enable_performance_insights=enable_performance_insights,
         )
+
+        # Create schema import custom resource if S3 location provided
+        if schema_s3_bucket and schema_s3_key:
+            self.create_schema_import(
+                database_name=database_name,
+                s3_bucket=schema_s3_bucket,
+                s3_key=schema_s3_key,
+                engine=engine,
+            )
 
         # Create outputs
         self.create_outputs()
@@ -187,6 +203,113 @@ class AuroraServerlessStack(Stack):
 
         return cluster
 
+    def create_schema_import(
+        self,
+        database_name: str,
+        s3_bucket: str,
+        s3_key: str,
+        engine: rds.DatabaseClusterEngine,
+    ) -> None:
+        """
+        Create a Custom Resource that imports database schema from S3.
+        
+        This uses a Lambda function to:
+        1. Download SQL file from S3
+        2. Connect to Aurora database
+        3. Execute the SQL schema
+        """
+        # Determine database port based on engine
+        if engine.engine_family == rds.DatabaseClusterEngineFamily.AURORA_POSTGRESQL:
+            db_port = 5432
+            # Note: For PostgreSQL, you'd need psycopg2 instead of pymysql
+            # This example focuses on MySQL
+            raise ValueError("PostgreSQL schema import not yet implemented. Use MySQL engine.")
+        else:
+            db_port = 3306
+        
+        # Create security group for Lambda
+        lambda_security_group = ec2.SecurityGroup(
+            self,
+            "SchemaImportLambdaSecurityGroup",
+            vpc=self.vpc,
+            description="Security group for schema import Lambda",
+            allow_all_outbound=True,
+        )
+        
+        # Create Lambda function for schema import
+        schema_import_lambda = _lambda.Function(
+            self,
+            "SchemaImportLambda",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="lambda_function.lambda_handler",
+            code=_lambda.Code.from_asset(
+                os.path.join(os.path.dirname(__file__), "lambda_schema_import")
+            ),
+            timeout=Duration.minutes(15),
+            memory_size=512,
+            vpc=self.vpc,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+            security_groups=[lambda_security_group],
+            environment={
+                "PYTHONUNBUFFERED": "1",
+            },
+        )
+        
+        # Allow Lambda to access S3 bucket
+        if s3_bucket.startswith("arn:"):
+            # If bucket is specified as ARN, grant permissions to that bucket
+            bucket = s3.Bucket.from_bucket_arn(self, "SchemaS3Bucket", s3_bucket)
+        else:
+            # If bucket is specified as name, grant permissions to that bucket
+            bucket = s3.Bucket.from_bucket_name(self, "SchemaS3Bucket", s3_bucket)
+        
+        bucket.grant_read(schema_import_lambda)
+        
+        # Allow Lambda to read from Secrets Manager
+        schema_import_lambda.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "secretsmanager:GetSecretValue",
+                    "secretsmanager:DescribeSecret",
+                ],
+                resources=[self.aurora_cluster.secret.secret_arn],
+            )
+        )
+        
+        # Allow Lambda to connect to database
+        # Add ingress rule to Aurora security group to allow Lambda
+        self.db_security_group.add_ingress_rule(
+            peer=lambda_security_group,
+            connection=ec2.Port.tcp(db_port),
+            description="Allow schema import Lambda to access Aurora",
+        )
+        
+        # Create Custom Resource provider
+        provider = cr.Provider(
+            self,
+            "SchemaImportProvider",
+            on_event_handler=schema_import_lambda,
+        )
+        
+        # Create Custom Resource
+        schema_import_resource = cr.CustomResource(
+            self,
+            "SchemaImportResource",
+            service_token=provider.service_token,
+            properties={
+                "S3Bucket": s3_bucket,
+                "S3Key": s3_key,
+                "SecretArn": self.aurora_cluster.secret.secret_arn,
+                "ClusterEndpoint": self.aurora_cluster.cluster_endpoint.hostname,
+                "Port": str(db_port),
+                "DatabaseName": database_name,
+            },
+        )
+        
+        # Ensure schema import happens after cluster is ready
+        schema_import_resource.node.add_dependency(self.aurora_cluster)
+
     def create_outputs(self) -> None:
         """Create CloudFormation outputs"""
         CfnOutput(
@@ -241,16 +364,46 @@ AuroraServerlessStack(
     env=Environment(account="123456789012", region="us-east-1")
 )
 
-# For Aurora MySQL
+# For Aurora MySQL - specify the version
 AuroraServerlessStack(
     app,
     "AuroraServerlessMysqlStack",
     database_name="mydatabase",
     engine=rds.DatabaseClusterEngine.aurora_mysql(
-        version=rds.AuroraMysqlEngineVersion.VER_3_04_0
+        version=rds.AuroraMysqlEngineVersion.VER_3_10_0  # MySQL 8.0.42 compatible (LTS)
+        # Or use: VER_3_04_0 for older MySQL 8.0 compatible version
     ),
     env=Environment(account="123456789012", region="us-east-1")
 )
+
+# For Aurora MySQL with schema import from S3
+# The schema SQL file will be automatically imported during stack deployment
+AuroraServerlessStack(
+    app,
+    "AuroraServerlessMysqlWithSchemaStack",
+    database_name="mydatabase",
+    engine=rds.DatabaseClusterEngine.aurora_mysql(
+        version=rds.AuroraMysqlEngineVersion.VER_3_10_0
+    ),
+    schema_s3_bucket="my-schema-bucket",  # S3 bucket containing schema SQL file
+    schema_s3_key="schema/initial-schema.sql",  # Path to SQL file in S3
+    env=Environment(account="123456789012", region="us-east-1")
+)
+
+# Common Aurora MySQL versions available:
+# - rds.AuroraMysqlEngineVersion.VER_3_10_0 (Aurora MySQL 3.10.0, compatible with MySQL 8.0.42 - LTS release)
+# - rds.AuroraMysqlEngineVersion.VER_3_04_0 (Aurora MySQL 3.04.0, compatible with MySQL 8.0)
+# - rds.AuroraMysqlEngineVersion.VER_3_03_0 (Aurora MySQL 3.03.0)
+# - rds.AuroraMysqlEngineVersion.VER_3_02_0 (Aurora MySQL 3.02.0)
+# - rds.AuroraMysqlEngineVersion.VER_2_12_0 (Aurora MySQL 2.12.0, compatible with MySQL 5.7)
+# - rds.AuroraMysqlEngineVersion.VER_2_11_0 (Aurora MySQL 2.11.0)
+# - rds.AuroraMysqlEngineVersion.VER_2_10_0 (Aurora MySQL 2.10.0)
+# - rds.AuroraMysqlEngineVersion.VER_2_09_0 (Aurora MySQL 2.09.0)
+# 
+# To see all available versions in your CDK environment, you can:
+# 1. Use IDE autocomplete: rds.AuroraMysqlEngineVersion.VER_
+# 2. Check AWS CDK documentation: https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_rds/AuroraMysqlEngineVersion.html
+# 3. List available versions programmatically or check AWS RDS console
 
 app.synth()
 """

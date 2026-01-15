@@ -1,0 +1,43 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+    tags:
+      - 'release/*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Determine event type
+        id: event-type
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "type=pr" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ] && [ -n "${{ github.ref }}" ] && [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "type=release" >> $GITHUB_OUTPUT
+          else
+            echo "type=merge" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Display event information
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Ref: ${{ github.ref }}"
+          echo "Type: ${{ steps.event-type.outputs.type }}"
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "PR Number: ${{ github.event.pull_request.number }}"
+          fi
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "Tag: ${{ github.ref_name }}"
+          fi
+

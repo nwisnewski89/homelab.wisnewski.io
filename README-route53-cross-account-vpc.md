@@ -45,6 +45,16 @@ You can associate the VPC with the hosted zone, even though they're in different
    - In DNS account: `route53:CreateVPCAssociationAuthorization`
    - In Network account: `route53:AssociateVPCWithHostedZone`
 
+## Implementation Details
+
+These stacks use **custom resources with Lambda functions** to call the Route53 APIs directly, following the same pattern as the ACM cross-account certificate validation solution.
+
+### Architecture
+- **Authorization Stack**: Uses a Lambda custom resource to call `CreateVPCAssociationAuthorization`
+- **Association Stack**: Uses a Lambda custom resource to call `AssociateVPCWithHostedZone`
+
+Both stacks handle Create, Update, and Delete operations properly, with error handling for edge cases (e.g., already associated, already authorized).
+
 ## Deployment Steps
 
 ### Step 1: Deploy Authorization Stack (DNS Account)
@@ -107,6 +117,8 @@ Deploy with:
 ```bash
 cdk deploy Route53VpcAssocStack --profile network-account-profile
 ```
+
+**Note**: You can also use the example file `route53_cross_account_vpc_example.py` which includes both stacks with proper configuration.
 
 ## Important Notes
 

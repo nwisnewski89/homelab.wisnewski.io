@@ -2,7 +2,7 @@
 """
 CDK Stacks for Cross-Account VPC Association with Route53 Private Hosted Zone
 
-This module provides two stacks:
+This module provides two stacks using custom resources with Lambda functions:
 1. Route53VpcAssociationAuthorizationStack - Deploy in the hosted zone account to authorize VPC associations
 2. Route53VpcAssociationStack - Deploy in the VPC account to associate the VPC with the hosted zone
 
@@ -30,8 +30,11 @@ Usage:
 from aws_cdk import (
     Stack,
     CfnOutput,
-    aws_route53 as route53,
-    aws_ec2 as ec2,
+    Duration,
+    aws_iam as iam,
+    aws_lambda as _lambda,
+    aws_logs as logs,
+    custom_resources as cr,
 )
 from constructs import Construct
 
@@ -42,6 +45,8 @@ class Route53VpcAssociationAuthorizationStack(Stack):
     
     This stack should be deployed in the account that owns the Route53 private hosted zone.
     It creates an authorization that allows the VPC account to associate the VPC.
+    
+    Uses a custom resource with Lambda to call CreateVPCAssociationAuthorization API.
     """
 
     def __init__(
@@ -65,37 +70,190 @@ class Route53VpcAssociationAuthorizationStack(Stack):
         """
         super().__init__(scope, construct_id, **kwargs)
 
-        # Use CfnVPCAssociationAuthorization to authorize the cross-account VPC association
-        # This is a CloudFormation resource since high-level CDK constructs don't support this
-        self.vpc_authorization = route53.CfnVPCAssociationAuthorization(
-            self,
-            "VpcAssociationAuthorization",
-            hosted_zone_id=hosted_zone_id,
-            vpc=route53.CfnVPCAssociationAuthorization.VpcProperty(
-                vpc_id=vpc_id,
-                vpc_region=vpc_region,
-            ),
-        )
+        self.hosted_zone_id = hosted_zone_id
+        self.vpc_id = vpc_id
+        self.vpc_region = vpc_region
+        self.vpc_account_id = vpc_account_id
+
+        # Create custom resource to authorize VPC association
+        self.authorization = self.create_authorization_custom_resource()
 
         # Create outputs
+        self.create_outputs()
+
+    def create_authorization_custom_resource(self) -> cr.CustomResource:
+        """Create custom resource Lambda to authorize VPC association"""
+
+        # Lambda function code to handle VPC association authorization
+        lambda_code = """
+import boto3
+import json
+import urllib.request
+import urllib.error
+
+def send_response(event, context, response_status, response_data, physical_resource_id=None):
+    '''Send response to CloudFormation using standard library'''
+    response_url = event['ResponseURL']
+    
+    response_body = {
+        'Status': response_status,
+        'Reason': f'See the details in CloudWatch Log Stream: {context.log_stream_name}',
+        'PhysicalResourceId': physical_resource_id or context.log_stream_name,
+        'StackId': event['StackId'],
+        'RequestId': event['RequestId'],
+        'LogicalResourceId': event['LogicalResourceId'],
+        'Data': response_data
+    }
+    
+    json_response_body = json.dumps(response_body)
+    
+    try:
+        req = urllib.request.Request(
+            response_url,
+            data=json_response_body.encode('utf-8'),
+            headers={'Content-Type': '', 'Content-Length': str(len(json_response_body))},
+            method='PUT'
+        )
+        with urllib.request.urlopen(req) as response:
+            print(f"Response sent: {response.status}")
+    except urllib.error.HTTPError as e:
+        print(f"Failed to send response: {str(e)}")
+        raise
+
+def handler(event, context):
+    print(f"Event: {json.dumps(event)}")
+    
+    request_type = event['RequestType']
+    properties = event.get('ResourceProperties', {})
+    
+    hosted_zone_id = properties['HostedZoneId']
+    vpc_id = properties['VpcId']
+    vpc_region = properties['VpcRegion']
+    
+    physical_resource_id = f"vpc-auth-{hosted_zone_id}-{vpc_id}"
+    response_data = {}
+    
+    try:
+        route53_client = boto3.client('route53')
+        
+        if request_type in ['Create', 'Update']:
+            # Create VPC association authorization
+            print(f"Authorizing VPC {vpc_id} in region {vpc_region} for hosted zone {hosted_zone_id}")
+            
+            route53_client.create_vpc_association_authorization(
+                HostedZoneId=hosted_zone_id,
+                VPC={
+                    'VPCRegion': vpc_region,
+                    'VPCId': vpc_id
+                }
+            )
+            
+            print(f"Successfully authorized VPC {vpc_id} for hosted zone {hosted_zone_id}")
+            
+            response_data = {
+                'HostedZoneId': hosted_zone_id,
+                'VpcId': vpc_id,
+                'VpcRegion': vpc_region,
+                'Status': 'Authorized'
+            }
+            
+            send_response(event, context, 'SUCCESS', response_data, physical_resource_id)
+            
+        elif request_type == 'Delete':
+            # Delete VPC association authorization
+            # Note: This is optional - authorization can remain after association
+            try:
+                print(f"Deleting authorization for VPC {vpc_id} and hosted zone {hosted_zone_id}")
+                route53_client.delete_vpc_association_authorization(
+                    HostedZoneId=hosted_zone_id,
+                    VPC={
+                        'VPCRegion': vpc_region,
+                        'VPCId': vpc_id
+                    }
+                )
+                print(f"Successfully deleted authorization")
+            except route53_client.exceptions.InvalidInput as e:
+                # Authorization may have already been deleted or association may exist
+                print(f"Authorization may not exist or VPC is already associated: {str(e)}")
+            except Exception as e:
+                print(f"Error deleting authorization (may not exist): {str(e)}")
+            
+            send_response(event, context, 'SUCCESS', {}, physical_resource_id)
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        send_response(event, context, 'FAILED', {'Error': str(e)}, physical_resource_id)
+        raise
+"""
+
+        # Create Lambda function
+        auth_function = _lambda.Function(
+            self,
+            "VpcAssociationAuthorizationFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="index.handler",
+            code=_lambda.Code.from_inline(lambda_code),
+            timeout=Duration.minutes(5),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+            description="Authorizes cross-account VPC association with Route53 private hosted zone",
+        )
+
+        # Grant permissions to Lambda function
+        auth_function.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "route53:CreateVPCAssociationAuthorization",
+                    "route53:DeleteVPCAssociationAuthorization",
+                    "route53:ListVPCAssociationAuthorizations",
+                ],
+                resources=[f"arn:aws:route53:::hostedzone/{self.hosted_zone_id}"],
+            )
+        )
+
+        # Create Provider for custom resource
+        provider = cr.Provider(
+            self,
+            "VpcAssociationAuthorizationProvider",
+            on_event_handler=auth_function,
+        )
+
+        # Create custom resource
+        custom_resource = cr.CustomResource(
+            self,
+            "VpcAssociationAuthorization",
+            service_token=provider.service_token,
+            properties={
+                "HostedZoneId": self.hosted_zone_id,
+                "VpcId": self.vpc_id,
+                "VpcRegion": self.vpc_region,
+            },
+        )
+
+        return custom_resource
+
+    def create_outputs(self) -> None:
+        """Create CloudFormation outputs"""
         CfnOutput(
             self,
             "HostedZoneId",
-            value=hosted_zone_id,
+            value=self.hosted_zone_id,
             description="Route53 private hosted zone ID",
         )
 
         CfnOutput(
             self,
             "AuthorizedVpcId",
-            value=vpc_id,
+            value=self.vpc_id,
             description="VPC ID that has been authorized for association",
         )
 
         CfnOutput(
             self,
             "AuthorizedVpcAccountId",
-            value=vpc_account_id,
+            value=self.vpc_account_id,
             description="Account ID where the authorized VPC exists",
         )
 
@@ -113,6 +271,8 @@ class Route53VpcAssociationStack(Stack):
     
     This stack should be deployed in the account that owns the VPC (network account).
     The VPC must have been authorized by the hosted zone account first.
+    
+    Uses a custom resource with Lambda to call AssociateVPCWithHostedZone API.
     """
 
     def __init__(
@@ -138,37 +298,223 @@ class Route53VpcAssociationStack(Stack):
         if vpc_region is None:
             vpc_region = self.region
 
-        # Use CfnHostedZoneVPCAssociation to associate the VPC with the hosted zone
-        # This is a CloudFormation resource since high-level CDK constructs don't support cross-account
-        self.vpc_association = route53.CfnHostedZoneVPCAssociation(
-            self,
-            "VpcAssociation",
-            hosted_zone_id=hosted_zone_id,
-            vpc=route53.CfnHostedZoneVPCAssociation.VpcProperty(
-                vpc_id=vpc_id,
-                vpc_region=vpc_region,
-            ),
-        )
+        self.hosted_zone_id = hosted_zone_id
+        self.vpc_id = vpc_id
+        self.vpc_region = vpc_region
+
+        # Create custom resource to associate VPC with hosted zone
+        self.association = self.create_association_custom_resource()
 
         # Create outputs
+        self.create_outputs()
+
+    def create_association_custom_resource(self) -> cr.CustomResource:
+        """Create custom resource Lambda to associate VPC with hosted zone"""
+
+        # Lambda function code to handle VPC association
+        lambda_code = """
+import boto3
+import json
+import urllib.request
+import urllib.error
+
+def send_response(event, context, response_status, response_data, physical_resource_id=None):
+    '''Send response to CloudFormation using standard library'''
+    response_url = event['ResponseURL']
+    
+    response_body = {
+        'Status': response_status,
+        'Reason': f'See the details in CloudWatch Log Stream: {context.log_stream_name}',
+        'PhysicalResourceId': physical_resource_id or context.log_stream_name,
+        'StackId': event['StackId'],
+        'RequestId': event['RequestId'],
+        'LogicalResourceId': event['LogicalResourceId'],
+        'Data': response_data
+    }
+    
+    json_response_body = json.dumps(response_body)
+    
+    try:
+        req = urllib.request.Request(
+            response_url,
+            data=json_response_body.encode('utf-8'),
+            headers={'Content-Type': '', 'Content-Length': str(len(json_response_body))},
+            method='PUT'
+        )
+        with urllib.request.urlopen(req) as response:
+            print(f"Response sent: {response.status}")
+    except urllib.error.HTTPError as e:
+        print(f"Failed to send response: {str(e)}")
+        raise
+
+def handler(event, context):
+    print(f"Event: {json.dumps(event)}")
+    
+    request_type = event['RequestType']
+    properties = event.get('ResourceProperties', {})
+    
+    hosted_zone_id = properties['HostedZoneId']
+    vpc_id = properties['VpcId']
+    vpc_region = properties['VpcRegion']
+    
+    physical_resource_id = f"vpc-assoc-{hosted_zone_id}-{vpc_id}"
+    response_data = {}
+    
+    try:
+        route53_client = boto3.client('route53')
+        
+        if request_type in ['Create', 'Update']:
+            # Associate VPC with hosted zone
+            print(f"Associating VPC {vpc_id} in region {vpc_region} with hosted zone {hosted_zone_id}")
+            
+            try:
+                response = route53_client.associate_vpc_with_hosted_zone(
+                    HostedZoneId=hosted_zone_id,
+                    VPC={
+                        'VPCRegion': vpc_region,
+                        'VPCId': vpc_id
+                    }
+                )
+                
+                change_id = response['ChangeInfo']['Id']
+                print(f"Successfully associated VPC {vpc_id} with hosted zone {hosted_zone_id}")
+                print(f"Change ID: {change_id}")
+                
+                # Wait for change to propagate
+                waiter = route53_client.get_waiter('resource_record_sets_changed')
+                waiter.wait(Id=change_id)
+                print("Association change has propagated")
+                
+                response_data = {
+                    'HostedZoneId': hosted_zone_id,
+                    'VpcId': vpc_id,
+                    'VpcRegion': vpc_region,
+                    'ChangeId': change_id,
+                    'Status': 'Associated'
+                }
+                
+            except route53_client.exceptions.InvalidVPCId as e:
+                error_msg = str(e)
+                if "already associated" in error_msg.lower():
+                    print(f"VPC {vpc_id} is already associated with hosted zone {hosted_zone_id}")
+                    response_data = {
+                        'HostedZoneId': hosted_zone_id,
+                        'VpcId': vpc_id,
+                        'VpcRegion': vpc_region,
+                        'Status': 'AlreadyAssociated'
+                    }
+                else:
+                    raise
+            
+            send_response(event, context, 'SUCCESS', response_data, physical_resource_id)
+            
+        elif request_type == 'Delete':
+            # Disassociate VPC from hosted zone
+            try:
+                print(f"Disassociating VPC {vpc_id} from hosted zone {hosted_zone_id}")
+                response = route53_client.disassociate_vpc_from_hosted_zone(
+                    HostedZoneId=hosted_zone_id,
+                    VPC={
+                        'VPCRegion': vpc_region,
+                        'VPCId': vpc_id
+                    }
+                )
+                
+                change_id = response['ChangeInfo']['Id']
+                print(f"Successfully disassociated VPC {vpc_id} from hosted zone {hosted_zone_id}")
+                print(f"Change ID: {change_id}")
+                
+                # Wait for change to propagate
+                waiter = route53_client.get_waiter('resource_record_sets_changed')
+                waiter.wait(Id=change_id)
+                print("Disassociation change has propagated")
+                
+            except route53_client.exceptions.InvalidVPCId as e:
+                # VPC may not be associated or may have been already disassociated
+                print(f"VPC may not be associated: {str(e)}")
+            except Exception as e:
+                print(f"Error during disassociation (VPC may already be disassociated): {str(e)}")
+            
+            send_response(event, context, 'SUCCESS', {}, physical_resource_id)
+        
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        send_response(event, context, 'FAILED', {'Error': str(e)}, physical_resource_id)
+        raise
+"""
+
+        # Create Lambda function
+        assoc_function = _lambda.Function(
+            self,
+            "VpcAssociationFunction",
+            runtime=_lambda.Runtime.PYTHON_3_11,
+            handler="index.handler",
+            code=_lambda.Code.from_inline(lambda_code),
+            timeout=Duration.minutes(5),
+            log_retention=logs.RetentionDays.ONE_WEEK,
+            description="Associates VPC with Route53 private hosted zone across accounts",
+        )
+
+        # Grant permissions to Lambda function
+        # Note: These permissions work across accounts when the hosted zone is in another account
+        assoc_function.add_to_role_policy(
+            iam.PolicyStatement(
+                effect=iam.Effect.ALLOW,
+                actions=[
+                    "route53:AssociateVPCWithHostedZone",
+                    "route53:DisassociateVPCFromHostedZone",
+                    "route53:GetChange",
+                ],
+                resources=[
+                    f"arn:aws:route53:::hostedzone/{self.hosted_zone_id}",
+                    "arn:aws:route53:::change/*",
+                ],
+            )
+        )
+
+        # Create Provider for custom resource
+        provider = cr.Provider(
+            self,
+            "VpcAssociationProvider",
+            on_event_handler=assoc_function,
+        )
+
+        # Create custom resource
+        custom_resource = cr.CustomResource(
+            self,
+            "VpcAssociation",
+            service_token=provider.service_token,
+            properties={
+                "HostedZoneId": self.hosted_zone_id,
+                "VpcId": self.vpc_id,
+                "VpcRegion": self.vpc_region,
+            },
+        )
+
+        return custom_resource
+
+    def create_outputs(self) -> None:
+        """Create CloudFormation outputs"""
         CfnOutput(
             self,
             "HostedZoneId",
-            value=hosted_zone_id,
+            value=self.hosted_zone_id,
             description="Route53 private hosted zone ID (in another account)",
         )
 
         CfnOutput(
             self,
             "AssociatedVpcId",
-            value=vpc_id,
+            value=self.vpc_id,
             description="VPC ID that has been associated with the hosted zone",
         )
 
         CfnOutput(
             self,
             "VpcRegion",
-            value=vpc_region,
+            value=self.vpc_region,
             description="Region where the VPC exists",
         )
 

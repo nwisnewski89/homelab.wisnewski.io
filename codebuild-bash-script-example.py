@@ -404,3 +404,4 @@ Best Practice:
 - Make them executable: chmod +x scripts/build.sh
 - Use environment variables to pass configuration
 """
+

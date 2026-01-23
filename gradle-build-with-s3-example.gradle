@@ -1,0 +1,163 @@
+// Example Gradle build file with Tar tasks, Maven Publishing to Nexus, and S3 Publishing
+
+plugins {
+    id 'java'
+    id 'maven-publish'
+    id 'com.mgd.core.gradle.s3' version '2.2.0'
+}
+
+group = 'com.example'
+version = '1.0.0'
+
+repositories {
+    mavenCentral()
+    // Your Nexus repository
+    maven {
+        name = 'Nexus'
+        url = 'https://your-nexus-server/repository/maven-releases/'
+        credentials {
+            username = project.findProperty('nexusUsername') ?: System.getenv('NEXUS_USERNAME')
+            password = project.findProperty('nexusPassword') ?: System.getenv('NEXUS_PASSWORD')
+        }
+    }
+}
+
+// Example: Tar task that creates archives from target directories
+task createTarArchive(type: Tar) {
+    description = 'Creates a tar.gz archive from target directories'
+    archiveFileName = "${project.name}-${project.version}.tar.gz"
+    archiveExtension = 'tar.gz'
+    compression = Compression.GZIP
+    destinationDirectory = file("${project.buildDir}/archives")
+    
+    // Include your target directories
+    from('target') {
+        into 'target'
+    }
+    
+    // Add other directories as needed
+    from('config') {
+        into 'config'
+    }
+}
+
+// Maven Publishing Configuration
+publishing {
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            
+            // Publish your tar archive as an artifact
+            artifact(createTarArchive) {
+                classifier = 'dist'
+                extension = 'tar.gz'
+            }
+            
+            pom {
+                name = project.name
+                description = 'Project description'
+            }
+        }
+    }
+    
+    repositories {
+        maven {
+            name = 'Nexus'
+            url = 'https://your-nexus-server/repository/maven-releases/'
+            credentials {
+                username = project.findProperty('nexusUsername') ?: System.getenv('NEXUS_USERNAME')
+                password = project.findProperty('nexusPassword') ?: System.getenv('NEXUS_PASSWORD')
+            }
+        }
+    }
+}
+
+// S3 Publishing Configuration
+s3 {
+    // Configure S3 bucket and credentials
+    bucket = project.findProperty('s3Bucket') ?: System.getenv('S3_BUCKET') ?: 'your-bucket-name'
+    region = project.findProperty('s3Region') ?: System.getenv('S3_REGION') ?: 'us-east-1'
+    
+    // AWS credentials (can be from environment, IAM role, or properties)
+    // The plugin will use AWS SDK default credential chain:
+    // 1. Environment variables (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
+    // 2. Java system properties
+    // 3. Credential files (~/.aws/credentials)
+    // 4. IAM roles (if running on EC2/ECS/Lambda)
+    
+    // Optional: Explicit credentials (not recommended for production)
+    // accessKey = project.findProperty('awsAccessKey') ?: System.getenv('AWS_ACCESS_KEY_ID')
+    // secretKey = project.findProperty('awsSecretKey') ?: System.getenv('AWS_SECRET_ACCESS_KEY')
+}
+
+// Task to publish tar archive to S3
+task publishToS3(type: com.mgd.core.gradle.s3.S3Upload) {
+    description = 'Publishes tar archive to S3'
+    
+    // Make sure tar archive is created first
+    dependsOn createTarArchive
+    
+    // Source file to upload
+    file = createTarArchive.archiveFile.get().asFile
+    
+    // S3 key (path in bucket)
+    key = "artifacts/${project.name}/${project.version}/${createTarArchive.archiveFileName.get()}"
+    
+    // Optional: Set content type
+    contentType = 'application/gzip'
+    
+    // Optional: Set metadata
+    metadata = [
+        'project': project.name,
+        'version': project.version,
+        'build-date': new Date().toString()
+    ]
+    
+    // Optional: Set ACL (if needed)
+    // acl = 'private' // Options: private, public-read, public-read-write, authenticated-read, etc.
+}
+
+// Task to publish multiple artifacts to S3
+task publishAllToS3 {
+    description = 'Publishes all artifacts to S3'
+    dependsOn publishToS3
+    
+    // You can add more S3 upload tasks here
+    // dependsOn publishJarToS3, publishDocsToS3, etc.
+}
+
+// Optional: Task that publishes to both Nexus and S3
+task publishAll {
+    description = 'Publishes to both Nexus and S3'
+    dependsOn publishToMaven, publishToS3
+}
+
+// Optional: Upload entire directory to S3
+task publishDirectoryToS3(type: com.mgd.core.gradle.s3.S3Upload) {
+    description = 'Publishes a directory to S3'
+    
+    // Upload the entire build/archives directory
+    file = file("${project.buildDir}/archives")
+    
+    // S3 key prefix
+    key = "artifacts/${project.name}/${project.version}/"
+    
+    // Upload directory recursively
+    // Note: The plugin may require a different approach for directories
+    // Check plugin documentation for directory upload syntax
+}
+
+// Make S3 publish run after Maven publish (optional)
+tasks.named('publishToS3') {
+    mustRunAfter 'publishToMaven'
+}
+
+// Example: Conditional S3 publishing based on environment
+task publishToS3IfRelease {
+    description = 'Publishes to S3 only if this is a release build'
+    onlyIf {
+        project.hasProperty('release') || System.getenv('CI') == 'true'
+    }
+    dependsOn publishToS3
+}
+

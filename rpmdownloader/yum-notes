@@ -1,0 +1,13 @@
+# UBI 7 / RHEL 7 equivalent of dnf-notes (yum)
+# Assumes RPM tar is extracted to /tmp/rpms (e.g. COPY rpms.tar /tmp/ && RUN tar -xvf /tmp/rpms.tar -C /tmp/rpms)
+# PACKAGES is set in the Dockerfile or environment.
+
+yum update -y --skip-broken --exclude=libgomp*,ncurses*,gcc*,libquadmath-devel*,perl-Encode*,perl-interpreter*,automake* \
+    && yum repolist -v \
+    && yum groupinstall -y --skip-broken --nogpgcheck -v 'Development Tools' --exclude=libgomp*,ncurses*,gcc*,libquadmath-devel*,perl-Encode*,perl-interpreter* \
+    && yum install -y --skip-broken --nogpgcheck -v \
+         /tmp/rpms/*.rpm \
+         ${PACKAGES} \
+    && (test -x /usr/bin/python3.9 && ln -sf /usr/bin/python3.9 /usr/bin/python || ln -sf /usr/bin/python3 /usr/bin/python) \
+    && yum clean all \
+    && rm -rf /var/cache/yum /tmp/rpms

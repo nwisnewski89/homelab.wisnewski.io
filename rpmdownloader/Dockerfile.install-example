@@ -1,0 +1,42 @@
+# Example: install RPM tar into UBI 7 or UBI 8 based on VARIANT
+# Build rhel7: docker build --build-arg VARIANT=rhel7 --build-arg RPMS_TAR=rpm-deps-el7.tar -f Dockerfile.install-example -t myapp:rhel7 .
+# Build rhel8: docker build --build-arg VARIANT=rhel8 --build-arg RPMS_TAR=rpm-deps-el8.tar -f Dockerfile.install-example -t myapp:rhel8 .
+
+ARG VARIANT=rhel7
+ARG RPMS_TAR=rpm-deps-el7.tar
+ARG PACKAGES=""
+
+# Base image must match VARIANT (ubi7 for rhel7, ubi8 for rhel8)
+ARG BASE_IMAGE=registry.access.redhat.com/ubi7/ubi
+FROM ${BASE_IMAGE}
+
+ARG VARIANT
+ARG RPMS_TAR
+ARG PACKAGES
+
+COPY ${RPMS_TAR} /tmp/rpms.tar
+RUN mkdir -p /tmp/rpms && tar -xvf /tmp/rpms.tar -C /tmp/rpms && rm /tmp/rpms.tar
+
+RUN set -e; \
+    EXCLUDE="--exclude=libgomp*,ncurses*,gcc*,libquadmath-devel*,perl-Encode*,perl-interpreter*,automake*"; \
+    if [ "${VARIANT}" = "rhel7" ]; then \
+      yum update -y --skip-broken ${EXCLUDE} \
+        && yum repolist -v \
+        && yum groupinstall -y --skip-broken --nogpgcheck -v 'Development Tools' ${EXCLUDE} \
+        && yum install -y --skip-broken --nogpgcheck -v /tmp/rpms/*.rpm ${PACKAGES} \
+        && (test -x /usr/bin/python3.9 && ln -sf /usr/bin/python3.9 /usr/bin/python || ln -sf /usr/bin/python3 /usr/bin/python) \
+        && yum clean all \
+        && rm -rf /var/cache/yum /tmp/rpms; \
+    else \
+      dnf update -y --skip-broken ${EXCLUDE} \
+        && dnf repolist --verbose \
+        && dnf groupinstall -y --skip-broken --nogpgcheck --verbose 'Development Tools' ${EXCLUDE} \
+        && dnf install -y --skip-broken --nogpgcheck --verbose /tmp/rpms/*.rpm ${PACKAGES} \
+        && ln -sf /usr/bin/python3.9 /usr/bin/python \
+        && dnf clean all \
+        && rm -rf /var/cache/dnf /tmp/rpms; \
+    fi
+
+# Add your app here
+# COPY . /app
+# WORKDIR /app

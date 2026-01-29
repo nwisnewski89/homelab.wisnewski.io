@@ -1,0 +1,9 @@
+dnf update -y --skip-broken --exclude=libgomp*,ncurses*,gcc*,libquadmath-devel*,perl-Encode*,perl-interpreter*,automake* \
+    && dnf repolist --verbose \
+    && dnf groupinstall -y  --skip-broken --nogpgcheck --verbose 'Development Tools' --exclude=libgomp*,ncurses*,gcc*,libquadmath-devel*,perl-Encode*,perl-interpreter* \
+    && dnf install -y --skip-broken --nogpgcheck --verbose \
+         /tmp/rpms/*.rpm \
+         ${PACKAGES} \
+    && ln -s /usr/bin/python3.9 /usr/bin/python \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /tmp/rpms

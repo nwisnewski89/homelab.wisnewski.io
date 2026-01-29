@@ -1,0 +1,45 @@
+# Generic Dockerfile: Download RPMs for UBI 7 or UBI 8 and produce a tar for Nexus upload
+# Same package list works for both; base image and tools (yum vs dnf) are selected by build args.
+#
+# Build UBI 7:
+#   docker build -f Dockerfile.rhel7-deps --build-arg BASE_IMAGE=registry.access.redhat.com/ubi7/ubi --build-arg VARIANT=el7 -t rpms-tar:el7 .
+# Build UBI 8:
+#   docker build -f Dockerfile.rhel7-deps --build-arg BASE_IMAGE=registry.access.redhat.com/ubi8/ubi --build-arg VARIANT=el8 -t rpms-tar:el8 .
+#
+# Extract tar: docker run --rm rpms-tar:el7 cat /output/rpm-deps-el7.tar > rpm-deps-el7.tar
+
+ARG BASE_IMAGE=registry.access.redhat.com/ubi7/ubi
+FROM ${BASE_IMAGE}
+
+ARG VARIANT=el7
+# Package list file in build context (same list for UBI 7 and UBI 8; default: package-list.txt)
+ARG PACKAGE_LIST=package-list.txt
+COPY ${PACKAGE_LIST} /package-list.txt
+
+# Install download tools and EPEL, then download RPMs and create tar.
+# UBI 7: yum, yum-utils (yumdownloader), EPEL 7
+# UBI 8: dnf, dnf-plugins-core (dnf download), EPEL 8
+RUN set -e; \
+    mkdir -p /rpms /output; \
+    PACKAGES=$(grep -v '^#' /package-list.txt | grep -v '^$' | tr '\n' ' '); \
+    if command -v dnf >/dev/null 2>&1; then \
+      echo "Using dnf (UBI 8)"; \
+      dnf install -y dnf-plugins-core; \
+      dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || true; \
+      dnf clean all; \
+      dnf download --resolve --destdir=/rpms ${PACKAGES}; \
+    else \
+      echo "Using yum (UBI 7)"; \
+      yum install -y yum-utils; \
+      yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || true; \
+      yum clean all; \
+      yumdownloader --resolve --destdir=/rpms ${PACKAGES}; \
+    fi; \
+    tar -cvf /output/rpm-deps-${VARIANT}.tar -C /rpms .; \
+    rm -rf /rpms /var/cache/yum /var/cache/dnf 2>/dev/null; \
+    echo "Tar created at /output/rpm-deps-${VARIANT}.tar"
+
+RUN echo "To extract: docker run --rm <this-image> cat /output/rpm-deps-${VARIANT}.tar > rpm-deps-${VARIANT}.tar" > /output/README.txt
+
+# Set at build time from VARIANT (el7 or el8)
+ENV RPMS_TAR_PATH=/output/rpm-deps-${VARIANT}.tar

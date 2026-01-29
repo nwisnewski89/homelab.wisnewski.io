@@ -1,0 +1,79 @@
+{
+  "_readme": "See README.md for full documentation on each setting",
+  
+  "production": {
+    "account_id": "111111111111",
+    "cluster_identifier": "prod-aurora-cluster",
+    "aws_profile": "production"
+  },
+  
+  "environments": {
+    "staging": {
+      "account_id": "222222222222",
+      "cluster_identifier": "staging-aurora-cluster",
+      "aws_profile": "staging",
+      
+      "db_subnet_group": "staging-db-subnet-group",
+      "security_group_ids": ["sg-staging123"],
+      "port": 3306,
+      
+      "instance_class": "db.r6g.large",
+      "instance_count": 2,
+      
+      "kms_key_id": "arn:aws:kms:us-east-1:222222222222:key/YOUR-STAGING-KMS-KEY-ID",
+      
+      "db_cluster_parameter_group": "staging-aurora-mysql8-cluster-params",
+      "db_parameter_group": "staging-aurora-mysql8-db-params",
+      
+      "backup_retention_period": 7,
+      "preferred_backup_window": "03:00-04:00",
+      "preferred_maintenance_window": "sun:04:00-sun:05:00",
+      "deletion_protection": false,
+      
+      "enable_iam_database_authentication": false,
+      "secrets_admin": "staging/aurora/admin",
+      "secrets_app": "staging/aurora/app-credentials",
+      
+      "enable_performance_insights": true,
+      "performance_insights_retention_period": 7,
+      "performance_insights_kms_key_id": "arn:aws:kms:us-east-1:222222222222:key/YOUR-STAGING-KMS-KEY-ID",
+      "monitoring_interval": 60,
+      "monitoring_role_arn": "arn:aws:iam::222222222222:role/rds-monitoring-role",
+      
+      "enable_cloudwatch_logs_exports": ["error", "slowquery"],
+      
+      "hosted_zone_id": "Z1234567890ABC",
+      "dns_record_name": "db.staging.example.com"
+    },
+    
+    "dev": {
+      "account_id": "222222222222",
+      "cluster_identifier": "dev-aurora-cluster",
+      "aws_profile": "dev",
+      
+      "db_subnet_group": "dev-db-subnet-group",
+      "security_group_ids": ["sg-dev456"],
+      "port": 3306,
+      
+      "instance_class": "db.r6g.medium",
+      "instance_count": 1,
+      
+      "kms_key_id": "arn:aws:kms:us-east-1:222222222222:key/YOUR-DEV-KMS-KEY-ID",
+      
+      "db_cluster_parameter_group": "dev-aurora-mysql8-cluster-params",
+      "db_parameter_group": "dev-aurora-mysql8-db-params",
+      
+      "backup_retention_period": 1,
+      "deletion_protection": false,
+      
+      "secrets_admin": "dev/aurora/admin",
+      "secrets_app": "dev/aurora/app-credentials",
+      
+      "enable_performance_insights": false,
+      "monitoring_interval": 0,
+      
+      "hosted_zone_id": "Z1234567890ABC",
+      "dns_record_name": "db.dev.example.com"
+    }
+  }
+}

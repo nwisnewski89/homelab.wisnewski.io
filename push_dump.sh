@@ -1,126 +1,50 @@
-#!/bin/bash
-#
-# Bash script equivalent of push_dump.py
-# Uploads files to S3 and sends SNS notifications
-#
-# Usage:
-#   ./push_dump.sh
-#
-# Environment variables (can be set via .env file):
-#   DATA_DIR - Directory to scan for files (default: /home/miaxbus/bsx-mis/input)
-#   BUCKET_NAME - S3 bucket name
-#   TOPIC_ARN - SNS topic ARN for notifications
-
-set -uo pipefail
-
-# Load environment variables from .env file if it exists
-if [ -f .env ]; then
-    set -a
-    source .env
-    set +a
-fi
-
-# Set default DATA_DIR if not provided
-DATA_DIR="${DATA_DIR:-/home/miaxbus/bsx-mis/input}"
-BUCKET_NAME="${BUCKET_NAME:-}"
-TOPIC_ARN="${TOPIC_ARN:-}"
-
-# Initialize message variable
-message=""
-
-# Function to upload file to S3 with retry logic
-s3_upload() {
-    local file_path="$1"
-    local file_name="$2"
-    local max_attempts=3
-    local attempt=0
-    local success=false
-
-    while [ $attempt -lt $max_attempts ] && [ "$success" = false ]; do
-        echo "Path $file_path name $file_name"
-        if aws s3 cp "$file_path" "s3://${BUCKET_NAME}/${file_name}"; then
-            success=true
-        else
-            attempt=$((attempt + 1))
-            if [ $attempt -lt $max_attempts ]; then
-                echo "Upload attempt $attempt failed, retrying..."
-                sleep 1
-            fi
-        fi
-    done
-
-    if [ "$success" = false ]; then
-        return 1
-    fi
-    return 0
-}
-
-# Function to publish message to SNS
-publish_sns() {
-    local msg="$1"
-    
-    if [ -z "$TOPIC_ARN" ]; then
-        echo "Error: TOPIC_ARN not set. Message: $msg"
-        return 1
-    fi
-
-    if aws sns publish \
-        --topic-arn "$TOPIC_ARN" \
-        --message "$msg"; then
-        echo "SNS notification sent: $msg"
-        return 0
-    else
-        echo "Failed to send SNS notification. Message: $msg"
-        return 1
-    fi
-}
-
-# Check if DATA_DIR exists
-if [ ! -d "$DATA_DIR" ]; then
-    echo "Error: Directory $DATA_DIR does not exist"
-    exit 1
-fi
-
-# Check required environment variables
-if [ -z "$BUCKET_NAME" ]; then
-    echo "Error: BUCKET_NAME environment variable is not set"
-    exit 1
-fi
-
-# Process files in the directory
-for file_path in "$DATA_DIR"/*; do
-    # Skip if no files match the pattern
-    [ -e "$file_path" ] || continue
-    
-    # Skip if it's a directory (only process regular files)
-    [ -f "$file_path" ] || continue
-    
-    # Get just the filename
-    file=$(basename "$file_path")
-    echo "$file"
-    
-    # Check if it's a schema file
-    if [[ $file == bsxmisdataschema_* ]]; then
-        message="Updated schema available ${file_path}."
-    # Check if it's a data file
-    elif [[ $file == bsxmisdata_* ]]; then
-        # Capture upload result without exiting on failure
-        if s3_upload "$file_path" "$file"; then
-            : # Upload succeeded, continue
-        else
-            message="Failed to upload ${file} bsx data dump."
-        fi
-    fi
-done
-
-# Send SNS notification if there's a message
-if [ -n "$message" ]; then
-    # Try to publish, but don't exit on failure (matches Python behavior)
-    if ! publish_sns "$message"; then
-        # If publish fails, just print the message (like Python script does)
-        echo "$message"
-    fi
-fi
-
-echo "Script completed"
-
+annobin-9.65-1.el8.x86_64.rpm
+automake-1.16.1-7.el8.noarch.rpm
+dracut-049-191.git20210920.el8.x86_64.rpm
+gcc-8.5.0-3.el8.x86_64.rpm
+gcc-c++-8.5.0-3.el8.x86_64.rpm
+gcc-gdb-plugin-8.5.0-3.el8.x86_64.rpm
+grub2-common-2.02-106.el8.noarch.rpm
+grub2-tools-2.02-106.el8.x86_64.rpm
+grub2-tools-minimal-2.02-106.el8.x86_64.rpm
+grubby-8.40-42.el8.x86_64.rpm
+hardlink-1.3-6.el8.x86_64.rpm
+intltool-0.51.0-11.el8.noarch.rpm
+jq-1.5-12.el8.x86_64.rpm
+kbd-2.0.4-10.el8.x86_64.rpm
+kbd-legacy-2.0.4-10.el8.noarch.rpm
+kbd-misc-2.0.4-10.el8.noarch.rpm
+kmod-25-18.el8.x86_64.rpm
+kpartx-0.8.4-17.el8.x86_64.rpm
+libgomp-8.5.0-3.el8.x86_64.rpm
+libkcapi-1.2.0-2.el8.x86_64.rpm
+libkcapi-hmaccalc-1.2.0-2.el8.x86_64.rpm
+libpeas-1.22.0-6.el8.x86_64.rpm
+libquadmath-devel-8.5.0-3.el8.x86_64.rpm
+libtool-2.4.6-25.el8.x86_64.rpm
+memstrack-0.1.11-1.el8.x86_64.rpm
+microdnf-3.8.0-2.el8.x86_64.rpm
+ncurses-devel-6.1-9.20180224.el8.x86_64.rpm
+net-tools-2.0-0.52.20160912git.el8.x86_64.rpm
+nmap-ncat-7.70-6.el8.x86_64.rpm
+oniguruma-6.8.2-2.el8.x86_64.rpm
+os-prober-1.74-9.el8.x86_64.rpm
+patchutils-0.3.4-10.el8.x86_64.rpm
+perl-5.26.3-420.el8.x86_64.rpm
+perl-Encode-2.97-3.el8.x86_64.rpm
+perl-generators-1.10-9.el8.noarch.rpm
+perl-interpreter-5.26.3-420.el8.x86_64.rpm
+perl-libs-5.26.3-420.el8.x86_64.rpm
+perl-Sys-Syslog-0.35-397.el8.x86_64.rpm
+perl-Time-HiRes-1.9758-2.el8.x86_64.rpm
+pigz-2.4-4.el8.x86_64.rpm
+procps-ng-3.3.15-6.el8.x86_64.rpm
+rpm-4.14.3-19.el8.x86_64.rpm
+rpm-build-libs-4.14.3-19.el8.x86_64.rpm
+rpm-libs-4.14.3-19.el8.x86_64.rpm
+rpm-sign-4.14.3-19.el8.x86_64.rpm
+systemd-udev-239-51.el8.x86_64.rpm
+systemtap-4.5-3.el8.x86_64.rpm
+systemtap-client-4.5-3.el8.x86_64.rpm
+valgrind-3.17.0-5.el8.x86_64.rpm
+valgrind-devel-3.17.0-5.el8.x86_64.rpm

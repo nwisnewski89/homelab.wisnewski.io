@@ -19,6 +19,11 @@ COPY ${PACKAGE_LIST} /package-list.txt
 # Install download tools and EPEL, then download RPMs and create tar.
 # UBI 7: yum, yum-utils (yumdownloader), EPEL 7
 # UBI 8: dnf, dnf-plugins-core (dnf download), EPEL 8
+
+# Disable SSL verification for all RPM repos (yum and dnf)
+RUN if [ -f /etc/yum.conf ]; then echo 'sslverify=0' >> /etc/yum.conf; fi; \
+    if [ -f /etc/dnf/dnf.conf ]; then echo 'sslverify=0' >> /etc/dnf/dnf.conf; fi
+    
 RUN set -e; \
     mkdir -p /rpms /output; \
     PACKAGES=$(grep -v '^#' /package-list.txt | grep -v '^$' | tr '\n' ' '); \

@@ -1,0 +1,56 @@
+# Sync an Argo CD application (manual or on push to main).
+# Required secrets: ARGOCD_SERVER, ARGOCD_AUTH_TOKEN
+# Optional: set ARGOCD_APP_NAME default or pass as input for workflow_dispatch.
+
+name: Argo CD Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Argo CD application name to sync'
+        required: true
+        default: 'pihole'
+      wait:
+        description: 'Wait for sync to complete'
+        required: false
+        default: true
+        type: boolean
+  push:
+    branches:
+      - main
+    paths:
+      # Optional: only trigger when app configs change (adjust paths to match your repo)
+      # - 'apps/**'
+
+jobs:
+  argocd-sync:
+    runs-on: ubuntu-latest
+    env:
+      ARGOCD_APP_NAME: ${{ github.event.inputs.app_name || 'pihole' }}
+
+    steps:
+      - name: Install Argo CD CLI
+        run: |
+          curl -sSL -o argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x argocd
+          sudo mv argocd /usr/local/bin/
+
+      - name: Login to Argo CD
+        run: |
+          argocd login ${{ secrets.ARGOCD_SERVER }} \
+            --auth-token ${{ secrets.ARGOCD_AUTH_TOKEN }} \
+            --grpc-web
+        env:
+          ARGOCD_OPTS: --insecure   # omit if your server uses a valid TLS cert
+
+      - name: Sync Argo CD application
+        run: |
+          if [ "${{ github.event.inputs.wait }}" = "false" ]; then
+            argocd app sync "${{ env.ARGOCD_APP_NAME }}" --async
+          else
+            argocd app sync "${{ env.ARGOCD_APP_NAME }}" --wait
+          fi
+
+      - name: Get application status
+        run: argocd app get ${{ env.ARGOCD_APP_NAME }} --refresh

@@ -1,0 +1,18 @@
+global:
+    image:
+    repo:
+    app-name: bsx-jobs
+
+jobs:
+    -   job-name:
+        script/scriptPath:
+        image-override:
+    -   job-name:
+        script/scriptPath:
+        image-override:
+    -   job-name:
+        script/scriptPath:
+        image-override:
+    -   job-name:
+        script/scriptPath:
+        image-override:

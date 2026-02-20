@@ -1,12 +1,15 @@
-image:
-repo:
-tag:
+# Default image settings (override in your release values)
+image: bsx-jobs
+repo: myregistry.io/myorg
+tag: latest
 app-name: bsx-jobs
 
+# Define one or more batch jobs
 jobs:
-  - job-name:
-    commands: []
-    image-override:
-    image-tag-override:
-  - job-name:
-    commands: []
+  - job-name: example-job
+    commands:
+      - /bin/sh
+      - -c
+      - "echo hello"
+    # image-override:   # optional: override image for this job
+    # image-tag-override:   # optional: override tag for this job

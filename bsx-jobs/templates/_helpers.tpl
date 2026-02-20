@@ -12,7 +12,7 @@ Full image reference for a job (with optional overrides).
 imageOverride replaces repo/image; imageTagOverride replaces tag.
 */}}
 {{- define "bsx-jobs.image" -}}
-{{- $base := index .job "image-override" | default (printf "%s/%s" .root.Values.repo .root.Values.image) -}}
-{{- $tag := index .job "image-tag-override" | default .root.Values.tag -}}
+{{- $base := index .job "image-override" | default (printf "%s/%s" (.root.Values.repo | default "docker.io/library") (.root.Values.image | default "busybox")) -}}
+{{- $tag := index .job "image-tag-override" | default (.root.Values.tag | default "latest") -}}
 {{- printf "%s:%s" $base $tag -}}
 {{- end -}}

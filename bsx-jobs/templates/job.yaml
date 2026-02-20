@@ -1,0 +1,32 @@
+{{- range $index, $job := .Values.jobs }}
+{{- $jobName := index $job "job-name" }}
+{{- if $jobName }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $jobName }}-{{ randAlphaNum 5 | lower }}
+  labels:
+    app.kubernetes.io/name: {{ index $.Values "app-name" | default "bsx-jobs" }}
+    app.kubernetes.io/component: job
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 4
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ index $.Values "app-name" | default "bsx-jobs" }}
+        app.kubernetes.io/component: job
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: {{ $jobName }}
+          image: {{ include "bsx-jobs.image" (dict "root" $ "job" $job) }}
+          {{- with $job.commands }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+{{- end }}
+{{- end }}

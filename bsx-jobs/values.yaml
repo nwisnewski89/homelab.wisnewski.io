@@ -1,0 +1,12 @@
+image:
+repo:
+tag:
+app-name: bsx-jobs
+
+jobs:
+  - job-name:
+    commands: []
+    image-override:
+    image-tag-override:
+  - job-name:
+    commands: []

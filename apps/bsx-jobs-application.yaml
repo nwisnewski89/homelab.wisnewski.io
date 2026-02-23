@@ -1,0 +1,22 @@
+# Argo CD Application: deploys the bsx-jobs Kustomize overlay (which references the Helm chart).
+# App-of-apps (path: apps) will apply this; Argo then syncs source.path with Kustomize + Helm.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: bsx-jobs
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/nwisnewski89/homelab.wisnewski.io  # set to your repo URL
+    targetRevision: main
+    path: apps/bsx-jobs
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

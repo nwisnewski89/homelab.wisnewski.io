@@ -1,50 +1,17 @@
-# Generic Dockerfile: Download RPMs for UBI 7 or UBI 8 and produce a tar for Nexus upload
-# Same package list works for both; base image and tools (yum vs dnf) are selected by build args.
-#
-# Build UBI 7:
-#   docker build -f Dockerfile.rhel7-deps --build-arg BASE_IMAGE=registry.access.redhat.com/ubi7/ubi --build-arg VARIANT=el7 -t rpms-tar:el7 .
-# Build UBI 8:
-#   docker build -f Dockerfile.rhel7-deps --build-arg BASE_IMAGE=registry.access.redhat.com/ubi8/ubi --build-arg VARIANT=el8 -t rpms-tar:el8 .
-#
-# Extract tar: docker run --rm rpms-tar:el7 cat /output/rpm-deps-el7.tar > rpm-deps-el7.tar
+# RHEL 7–compatible base (UBI 7 is free; for actual RHEL 7 use registry.redhat.io/rhel7)
+FROM registry.access.redhat.com/ubi7/ubi:latest
 
-ARG BASE_IMAGE=registry.access.redhat.com/ubi7/ubi
-FROM ${BASE_IMAGE}
+USER root
 
-ARG VARIANT=el7
-# Package list file in build context (same list for UBI 7 and UBI 8; default: package-list.txt)
-ARG PACKAGE_LIST=package-list.txt
-COPY ${PACKAGE_LIST} /package-list.txt
+# Enable repos and install Developer Toolset 7 (GCC 7, g++, GDB, binutils)
+RUN yum install -y yum-utils && \
+    yum-config-manager --enable rhel-7-server-devtools-rpms || true && \
+    yum install -y devtoolset-7-gcc devtoolset-7-gcc-c++ devtoolset-7-gdb \
+                   devtoolset-7-binutils make cmake3 git which \
+    && yum clean all
 
-# Install download tools and EPEL, then download RPMs and create tar.
-# UBI 7: yum, yum-utils (yumdownloader), EPEL 7
-# UBI 8: dnf, dnf-plugins-core (dnf download), EPEL 8
+# Default to devtoolset-7 in the shell
+ENV BASH_ENV=/opt/rh/devtoolset-7/enable
+ENV PATH="/opt/rh/devtoolset-7/root/usr/bin:${PATH}"
 
-# Disable SSL verification for all RPM repos (yum and dnf)
-RUN if [ -f /etc/yum.conf ]; then echo 'sslverify=0' >> /etc/yum.conf; fi; \
-    if [ -f /etc/dnf/dnf.conf ]; then echo 'sslverify=0' >> /etc/dnf/dnf.conf; fi
-    
-RUN set -e; \
-    mkdir -p /rpms /output; \
-    PACKAGES=$(grep -v '^#' /package-list.txt | grep -v '^$' | tr '\n' ' '); \
-    if command -v dnf >/dev/null 2>&1; then \
-      echo "Using dnf (UBI 8)"; \
-      dnf install -y dnf-plugins-core; \
-      dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm || true; \
-      dnf clean all; \
-      dnf download --resolve --destdir=/rpms ${PACKAGES}; \
-    else \
-      echo "Using yum (UBI 7)"; \
-      yum install -y yum-utils; \
-      yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm || true; \
-      yum clean all; \
-      yumdownloader --resolve --destdir=/rpms ${PACKAGES}; \
-    fi; \
-    tar -cvf /output/rpm-deps-${VARIANT}.tar -C /rpms .; \
-    rm -rf /rpms /var/cache/yum /var/cache/dnf 2>/dev/null; \
-    echo "Tar created at /output/rpm-deps-${VARIANT}.tar"
-
-RUN echo "To extract: docker run --rm <this-image> cat /output/rpm-deps-${VARIANT}.tar > rpm-deps-${VARIANT}.tar" > /output/README.txt
-
-# Set at build time from VARIANT (el7 or el8)
-ENV RPMS_TAR_PATH=/output/rpm-deps-${VARIANT}.tar
+WORKDIR /workspace

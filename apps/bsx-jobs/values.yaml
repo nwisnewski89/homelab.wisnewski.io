@@ -1,0 +1,9 @@
+# Override chart values for this app (chart defaults in ../../bsx-jobs/values.yaml)
+app-name: bsx-jobs
+
+jobs:
+  - job-name: example-job
+    commands:
+      - /bin/sh
+      - -c
+      - "echo hello from kustomize overlay"

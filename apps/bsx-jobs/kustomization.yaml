@@ -1,0 +1,13 @@
+# Kustomize overlay that references the Helm chart via relative path.
+# Chart lives at repo root: ../../bsx-jobs (chartHome + name).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+helmGlobals:
+  chartHome: "../.."   # relative to this kustomization root
+
+helmCharts:
+  - name: bsx-jobs
+    releaseName: bsx-jobs
+    namespace: default
+    valuesFile: values.yaml

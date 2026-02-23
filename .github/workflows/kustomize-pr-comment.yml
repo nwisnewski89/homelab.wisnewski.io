@@ -1,0 +1,103 @@
+# Run kustomize build (with Helm) in directories that changed (paths-filter) and comment rendered manifest to PR.
+name: Kustomize build (changed dirs) → PR comment
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  kustomize-comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed directories
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            # Add one line per directory to watch; key = directory path, value = glob for that dir
+            overlays/staging: 'overlays/staging/**'
+            overlays/production: 'overlays/production/**'
+            base: 'base/**'
+
+      - name: Get list of changed dirs
+        id: dirs
+        run: |
+          # paths-filter outputs filter names that matched as JSON array in 'changes'
+          CHANGES='${{ steps.filter.outputs.changes }}'
+          if [ "$CHANGES" = "[]" ] || [ -z "$CHANGES" ]; then
+            echo "has_dirs=false" >> $GITHUB_OUTPUT
+            echo "dirs=[]" >> $GITHUB_OUTPUT
+            echo "No kustomize directories changed; skipping."
+            exit 0
+          fi
+          echo "has_dirs=true" >> $GITHUB_OUTPUT
+          echo "dirs=$CHANGES" >> $GITHUB_OUTPUT
+          echo "Changed dirs: $CHANGES"
+
+      - name: Set up Kustomize
+        if: steps.dirs.outputs.has_dirs == 'true'
+        run: |
+          curl -sL "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          sudo mv kustomize /usr/local/bin/
+          kustomize version
+
+      - name: Build and collect manifests
+        if: steps.dirs.outputs.has_dirs == 'true'
+        id: build
+        run: |
+          DIRS='${{ steps.dirs.outputs.dirs }}'
+          # Parse JSON array: ["overlays/staging","base"] -> overlays/staging base
+          DIRS=$(echo "$DIRS" | sed 's/\[//;s/\]//;s/"//g;s/,/ /g')
+          OUTPUT_FILE="$RUNNER_TEMP/rendered-manifests.yaml"
+          echo "# Rendered manifests (kustomize build --enable-helm)" > "$OUTPUT_FILE"
+          for dir in $DIRS; do
+            echo "" >> "$OUTPUT_FILE"
+            echo "# --- $dir ---" >> "$OUTPUT_FILE"
+            kustomize build --enable-helm "$dir" >> "$OUTPUT_FILE" || (echo "kustomize build failed for: $dir" && exit 1)
+          done
+          # GitHub Actions step output is truncated for large content; write to file for comment step
+          echo "outfile=$OUTPUT_FILE" >> $GITHUB_OUTPUT
+          wc -l "$OUTPUT_FILE"
+
+      - name: Comment rendered manifest on PR
+        if: steps.dirs.outputs.has_dirs == 'true' && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const outfile = '${{ steps.build.outputs.outfile }}';
+            let content = fs.readFileSync(outfile, 'utf8');
+            const maxLen = 60000;
+            if (content.length > maxLen) content = content.slice(0, maxLen) + '\n# ... (truncated)';
+            const dirs = '${{ steps.dirs.outputs.dirs }}';
+            const marker = '<!-- kustomize-rendered-manifests -->';
+            const body = `## Kustomize rendered manifests (--enable-helm)\n\nChanged dirs: \`${dirs}\`\n\n<details><summary>Rendered YAML</summary>\n\n\`\`\`yaml\n${content}\n\`\`\`\n</details>\n${marker}`;
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(c => c.user.type === 'Bot' && c.body.includes(marker));
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

@@ -17,8 +17,9 @@ metadata:
 spec:
   ttlSecondsAfterFinished: 300
   backoffLimit: 4
+  template:
     spec:
-    restartPolicy: Never
+      restartPolicy: Never
       containers:
         - name: {{ $jobName | quote }}
           image: {{ $jobImage | default $.Values.image | quote }}

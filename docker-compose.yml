@@ -1,0 +1,43 @@
+services:
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: vault
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      # AWS credentials for KMS seal + S3 storage (use IAM role in production)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-us-east-1}
+    volumes:
+      - ./config:/vault/config:ro
+      - vault-data:/vault/data
+    cap_add:
+      - IPC_LOCK
+    command: server -config=/vault/config/server.hcl
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "vault", "status", "-address=http://127.0.0.1:8200"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  vault-auto-init:
+    image: hashicorp/vault:1.15
+    container_name: vault-auto-init
+    depends_on:
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: "http://vault:8200"
+      VAULT_INIT_OUTPUT_DIR: "/vault/init-keys"
+    volumes:
+      - ./scripts/auto-init.sh:/auto-init.sh:ro
+      - ./init-keys:/vault/init-keys
+    entrypoint: ["/bin/sh", "/auto-init.sh"]
+    restart: "no"
+
+volumes:
+  vault-data:

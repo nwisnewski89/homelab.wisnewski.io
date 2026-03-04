@@ -1,4 +1,4 @@
-#!/bin/sh
+ls#!/bin/sh
 set -e
 
 VAULT_ADDR="${VAULT_ADDR:-http://vault:8200}"

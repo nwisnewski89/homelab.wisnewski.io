@@ -11,6 +11,9 @@ on:
         description: 'Argo CD application name to sync'
         required: true
         default: 'pihole'
+      job_name:
+        description: 'Optional Job name to sync and follow logs (syncs only this resource)'
+        required: false
       wait:
         description: 'Wait for sync to complete'
         required: false
@@ -46,11 +49,47 @@ jobs:
 
       - name: Sync Argo CD application
         run: |
-          if [ "${{ github.event.inputs.wait }}" = "false" ]; then
-            argocd app sync "${{ env.ARGOCD_APP_NAME }}" --async
+          APP="${{ env.ARGOCD_APP_NAME }}"
+          JOB_NAME="${{ github.event.inputs.job_name }}"
+          if [ -n "$JOB_NAME" ]; then
+            if [ "${{ github.event.inputs.wait }}" = "false" ]; then
+              argocd app sync "$APP" --resource "batch:Job:$JOB_NAME" --async
+            else
+              argocd app sync "$APP" --resource "batch:Job:$JOB_NAME" --wait
+            fi
           else
-            argocd app sync "${{ env.ARGOCD_APP_NAME }}" --wait
+            if [ "${{ github.event.inputs.wait }}" = "false" ]; then
+              argocd app sync "$APP" --async
+            else
+              argocd app sync "$APP" --wait
+            fi
           fi
+
+      - name: Wait for job past ContainerCreating
+        if: github.event.inputs.job_name != ''
+        run: |
+          APP="${{ env.ARGOCD_APP_NAME }}"
+          JOB_NAME="${{ github.event.inputs.job_name }}"
+          MAX_ATTEMPTS=60
+          INTERVAL=10
+          for i in $(seq 1 $MAX_ATTEMPTS); do
+            echo "Polling logs (attempt $i/$MAX_ATTEMPTS)..."
+            LOGS=$(argocd app logs "$APP" --name "$JOB_NAME" --kind Job 2>&1) || true
+            if echo "$LOGS" | grep -q "ContainerCreating"; then
+              echo "Still ContainerCreating, waiting ${INTERVAL}s..."
+              sleep $INTERVAL
+            elif [ -z "$(echo "$LOGS" | tr -d '\n' | tr -d ' ')" ]; then
+              echo "No log output yet, waiting ${INTERVAL}s..."
+              sleep $INTERVAL
+            else
+              echo "No longer ContainerCreating."
+              echo "--- Recent logs ---"
+              echo "$LOGS"
+              exit 0
+            fi
+          done
+          echo "Timeout waiting for job to leave ContainerCreating state"
+          exit 1
 
       - name: Get application status
         run: argocd app get ${{ env.ARGOCD_APP_NAME }} --refresh

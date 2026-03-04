@@ -1,0 +1,76 @@
+# ArgoCD PostSync hook: after a successful sync, send a message to an AWS SQS queue.
+# Use this manifest in an Application's source (e.g. kustomize base or raw manifest).
+#
+# Prerequisites:
+#   - Create a Secret (e.g. argocd-postsync-sqs-secret) with keys:
+#       SQS_QUEUE_URL, AWS_REGION, and optionally AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
+#     Or use IRSA (IAM Role for Service Account) and omit access keys; then remove
+#     env refs for AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY and set serviceAccountName.
+#   - Set APP_NAME below to match your Argo CD Application name (optional but useful).
+#
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: argocd-postsync-notify-sqs
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  ttlSecondsAfterFinished: 300
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: Never
+      # serviceAccountName: your-irsa-service-account   # if using IRSA for SQS
+      containers:
+        - name: notify-sqs
+          image: amazon/aws-cli:2.15.0
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              TS="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+              BODY="{\"event\":\"argocd.postsync\",\"app\":\"${APP_NAME:-unknown}\",\"namespace\":\"${NAMESPACE:-unknown}\",\"timestamp\":\"${TS}\"}"
+              aws sqs send-message \
+                --region "${AWS_REGION}" \
+                --queue-url "${SQS_QUEUE_URL}" \
+                --message-body "${BODY}" \
+                --message-attributes "EventType={DataType=String,StringValue=argocd.postsync},App={DataType=String,StringValue=${APP_NAME:-unknown}}"
+              echo "Sent post-sync message to SQS"
+          env:
+            - name: APP_NAME
+              value: "my-app"   # set to your Argo CD Application name
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: SQS_QUEUE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-postsync-sqs-secret
+                  key: SQS_QUEUE_URL
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-postsync-sqs-secret
+                  key: AWS_REGION
+            # Omit the two below if using IRSA
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-postsync-sqs-secret
+                  key: AWS_ACCESS_KEY_ID
+                  optional: true
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: argocd-postsync-sqs-secret
+                  key: AWS_SECRET_ACCESS_KEY
+                  optional: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

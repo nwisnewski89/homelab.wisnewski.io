@@ -1,63 +1,2073 @@
 {
-  "app": "python ecs_fargate_app.py",
-  "watch": {
-    "include": [
-      "**"
-    ],
-    "exclude": [
-      "README.md",
-      "cdk*.json",
-      "requirements*.txt",
-      "**/__pycache__",
-      "**/.venv",
-      "**/.git",
-      "ansible/**",
-      "terraform/**"
-    ]
-  },
-  "context": {
-    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
-    "@aws-cdk/core:checkSecretUsage": true,
-    "@aws-cdk/core:target-partitions": [
-      "aws",
-      "aws-cn"
-    ],
-    "@aws-cdk-containers/ecs-service-extensions:enableDefaultLogDriver": true,
-    "@aws-cdk/aws-ec2:uniqueImdsv2TemplateName": true,
-    "@aws-cdk/aws-ecs:arnFormatIncludesClusterName": true,
-    "@aws-cdk/aws-iam:minimizePolicies": true,
-    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
-    "@aws-cdk/aws-codepipeline:crossAccountKeyAliasStackSafeResourceName": true,
-    "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
-    "@aws-cdk/aws-sns-subscriptions:restrictSqsDescryption": true,
-    "@aws-cdk/aws-apigateway:disableCloudWatchRole": true,
-    "@aws-cdk/core:enablePartitionLiterals": true,
-    "@aws-cdk/aws-events:eventsTargetQueueSameAccount": true,
-    "@aws-cdk/aws-iam:standardizedServicePrincipals": true,
-    "@aws-cdk/aws-ecs:disableExplicitDeploymentControllerForCircuitBreaker": true,
-    "@aws-cdk/aws-iam:importedRoleStackSafeDefaultPolicyName": true,
-    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
-    "@aws-cdk/aws-route53-patters:useCertificate": true,
-    "@aws-cdk/customresources:installLatestAwsSdkDefault": false,
-    "@aws-cdk/aws-rds:databaseProxyUniqueResourceName": true,
-    "@aws-cdk/aws-codedeploy:removeAlarmsFromDeploymentGroup": true,
-    "@aws-cdk/aws-apigateway:authorizerChangeDeploymentLogicalId": true,
-    "@aws-cdk/aws-ec2:launchTemplateDefaultUserData": true,
-    "@aws-cdk/aws-secretsmanager:useAttachedSecretResourcePolicyForSecretTargetAttachments": true,
-    "@aws-cdk/aws-redshift:columnId": true,
-    "@aws-cdk/aws-stepfunctions-tasks:enableLogging": true,
-    "@aws-cdk/aws-ec2:restrictDefaultSecurityGroup": true,
-    "@aws-cdk/aws-apigateway:requestValidatorUniqueId": true,
-    "@aws-cdk/aws-kms:aliasNameRef": true,
-    "@aws-cdk/aws-autoscaling:generateLaunchTemplateInsteadOfLaunchConfig": true,
-    "@aws-cdk/core:includePrefixInUniqueNameGeneration": true,
-    "@aws-cdk/aws-efs:denyAnonymousAccess": true,
-    "@aws-cdk/aws-opensearchservice:enableLogging": true,
-    "@aws-cdk/aws-nordicapis-apigateway:authorizerChangeDeploymentLogicalId": true,
-    "@aws-cdk/aws-ec2:ebsDefaultGp3Volume": true,
-    "@aws-cdk/aws-ecs-patterns:removeDefaultDesiredCount": true,
-    "@aws-cdk/aws-rds:preventRenderingDeprecatedCredentials": true,
-    "@aws-cdk/aws-codepipeline-actions:useNewDefaultBranchForSourceAction": true
-  }
+  "groups": [
+    {
+      "_pulumi_import_id": "MFP-QA1/4656951e-30ca-446f-b1a7-0977d6745eeb",
+      "_resource_id": "4656951e-30ca-446f-b1a7-0977d6745eeb",
+      "_resource_type": "keycloak.Group",
+      "order": 0,
+      "parent_group_name": null,
+      "name": "MIAX Emerald Options",
+      "path": "/MIAX Emerald Options",
+      "realm_roles": [
+        "MIAX_EMERALD_OPTIONS"
+      ],
+      "subgroups": [
+        {
+          "_pulumi_import_id": "MFP-QA1/9222911e-d56d-4cdb-8cd3-182572d72de4",
+          "_resource_id": "9222911e-d56d-4cdb-8cd3-182572d72de4",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Emerald Options",
+          "name": "Risk Protections",
+          "path": "/MIAX Emerald Options/Risk Protections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/04e72890-976c-4c9c-a169-0c7d2c33babb",
+              "_resource_id": "04e72890-976c-4c9c-a169-0c7d2c33babb",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections READ",
+              "path": "/MIAX Emerald Options/Risk Protections/Risk Protections READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/2f5641ab-a974-49d9-8567-e748e7adc425",
+              "_resource_id": "2f5641ab-a974-49d9-8567-e748e7adc425",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections WRITE",
+              "path": "/MIAX Emerald Options/Risk Protections/Risk Protections WRITE"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/5354611e-802a-418c-aa2d-daedb0ebd141",
+          "_resource_id": "5354611e-802a-418c-aa2d-daedb0ebd141",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Emerald Options",
+          "name": "Market Maker Assignments",
+          "path": "/MIAX Emerald Options/Market Maker Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/95f9bf66-3f95-4dba-afab-470b92b73152",
+              "_resource_id": "95f9bf66-3f95-4dba-afab-470b92b73152",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Market Maker Assignments",
+              "name": "Default",
+              "path": "/MIAX Emerald Options/Market Maker Assignments/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/8e9b18b7-ef4e-4cb7-8f3a-002c2933a125",
+                  "_resource_id": "8e9b18b7-ef4e-4cb7-8f3a-002c2933a125",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Emerald Options/Market Maker Assignments/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/c87caef2-8413-4b58-8541-25327146bdf9",
+                  "_resource_id": "c87caef2-8413-4b58-8541-25327146bdf9",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Emerald Options/Market Maker Assignments/Default/Default WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/bb0851e5-cc11-4a46-abef-ec69d50c4e91",
+          "_resource_id": "bb0851e5-cc11-4a46-abef-ec69d50c4e91",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Emerald Options",
+          "name": "MPID Assignments",
+          "path": "/MIAX Emerald Options/MPID Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/1360ddfd-003e-4f93-8c9b-876cfeca099a",
+              "_resource_id": "1360ddfd-003e-4f93-8c9b-876cfeca099a",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments WRITE",
+              "path": "/MIAX Emerald Options/MPID Assignments/MPID Assignments WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/fcf64368-c03a-4515-aa63-77ed7f3b5c69",
+              "_resource_id": "fcf64368-c03a-4515-aa63-77ed7f3b5c69",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments READ",
+              "path": "/MIAX Emerald Options/MPID Assignments/MPID Assignments READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/879e0247-57bb-4f54-aeee-b4b11d43da8c",
+          "_resource_id": "879e0247-57bb-4f54-aeee-b4b11d43da8c",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Emerald Options",
+          "name": "Trade Corrections",
+          "path": "/MIAX Emerald Options/Trade Corrections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/92d85a4f-2197-4694-9809-36da8f119c69",
+              "_resource_id": "92d85a4f-2197-4694-9809-36da8f119c69",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Default",
+              "path": "/MIAX Emerald Options/Trade Corrections/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/fe8642c8-5b71-4c7f-8b53-304281e490d7",
+                  "_resource_id": "fe8642c8-5b71-4c7f-8b53-304281e490d7",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Emerald Options/Trade Corrections/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/b9161afb-a365-40b7-ba22-5a9c0549acac",
+                  "_resource_id": "b9161afb-a365-40b7-ba22-5a9c0549acac",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Emerald Options/Trade Corrections/Default/Default WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/67da082d-5ff0-41ce-8157-c7e01c4c29b3",
+              "_resource_id": "67da082d-5ff0-41ce-8157-c7e01c4c29b3",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections WRITE",
+              "path": "/MIAX Emerald Options/Trade Corrections/Trade Corrections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/a7d02983-e2d6-4a45-8654-be31aecdc601",
+              "_resource_id": "a7d02983-e2d6-4a45-8654-be31aecdc601",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections READ",
+              "path": "/MIAX Emerald Options/Trade Corrections/Trade Corrections READ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_pulumi_import_id": "MFP-QA1/d5496ce3-f0d5-4444-b09d-dacdba9fdb3c",
+      "_resource_id": "d5496ce3-f0d5-4444-b09d-dacdba9fdb3c",
+      "_resource_type": "keycloak.Group",
+      "order": 0,
+      "parent_group_name": null,
+      "name": "MIAX Options",
+      "path": "/MIAX Options",
+      "realm_roles": [
+        "MIAX_OPTIONS"
+      ],
+      "subgroups": [
+        {
+          "_pulumi_import_id": "MFP-QA1/7618a521-b250-4913-b34d-46a0e804c03d",
+          "_resource_id": "7618a521-b250-4913-b34d-46a0e804c03d",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Options",
+          "name": "Risk Protections",
+          "path": "/MIAX Options/Risk Protections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/1e480cdc-42d5-423c-a0a6-86b7e4337736",
+              "_resource_id": "1e480cdc-42d5-423c-a0a6-86b7e4337736",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections WRITE",
+              "path": "/MIAX Options/Risk Protections/Risk Protections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/976c0b50-8c19-4cb3-a538-d85839dda996",
+              "_resource_id": "976c0b50-8c19-4cb3-a538-d85839dda996",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections READ",
+              "path": "/MIAX Options/Risk Protections/Risk Protections READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/22aa9118-18f0-4ca8-9ef3-3360d59c6f96",
+          "_resource_id": "22aa9118-18f0-4ca8-9ef3-3360d59c6f96",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Options",
+          "name": "Trade Corrections",
+          "path": "/MIAX Options/Trade Corrections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/b02826cd-6187-4ab5-8160-62cb0819d236",
+              "_resource_id": "b02826cd-6187-4ab5-8160-62cb0819d236",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections WRITE",
+              "path": "/MIAX Options/Trade Corrections/Trade Corrections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/ce76193f-8fa6-437c-a83c-e5f83bbb6b41",
+              "_resource_id": "ce76193f-8fa6-437c-a83c-e5f83bbb6b41",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Default",
+              "path": "/MIAX Options/Trade Corrections/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/232ea3c3-2978-4cce-8b63-5071f74ce9e8",
+                  "_resource_id": "232ea3c3-2978-4cce-8b63-5071f74ce9e8",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Options/Trade Corrections/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/12fec17f-c271-4f13-84bb-f1242cd177ef",
+                  "_resource_id": "12fec17f-c271-4f13-84bb-f1242cd177ef",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Options/Trade Corrections/Default/Default WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/176889ed-9ac1-4bd0-953e-d6755a9eb4c3",
+              "_resource_id": "176889ed-9ac1-4bd0-953e-d6755a9eb4c3",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections READ",
+              "path": "/MIAX Options/Trade Corrections/Trade Corrections READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/6e4b7739-8ec1-4931-b682-905d85023f27",
+          "_resource_id": "6e4b7739-8ec1-4931-b682-905d85023f27",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Options",
+          "name": "MPID Assignments",
+          "path": "/MIAX Options/MPID Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/410dd4ad-7425-4e9b-9dce-99e324d78b50",
+              "_resource_id": "410dd4ad-7425-4e9b-9dce-99e324d78b50",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments WRITE",
+              "path": "/MIAX Options/MPID Assignments/MPID Assignments WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/56fe19e5-0dba-40dc-bf17-911f68f9dd0d",
+              "_resource_id": "56fe19e5-0dba-40dc-bf17-911f68f9dd0d",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments READ",
+              "path": "/MIAX Options/MPID Assignments/MPID Assignments READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/6b6d091d-d61b-47e9-9421-7008319740bf",
+          "_resource_id": "6b6d091d-d61b-47e9-9421-7008319740bf",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Options",
+          "name": "Market Maker Assignments",
+          "path": "/MIAX Options/Market Maker Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/05e5635e-4198-4f2e-b69e-1baefba6ffb8",
+              "_resource_id": "05e5635e-4198-4f2e-b69e-1baefba6ffb8",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Market Maker Assignments",
+              "name": "Default",
+              "path": "/MIAX Options/Market Maker Assignments/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/e7ea2a6e-939b-4445-953b-56ecb0ec4fa2",
+                  "_resource_id": "e7ea2a6e-939b-4445-953b-56ecb0ec4fa2",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Options/Market Maker Assignments/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/4684653b-7625-41cd-b435-000d4edd0412",
+                  "_resource_id": "4684653b-7625-41cd-b435-000d4edd0412",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Options/Market Maker Assignments/Default/Default WRITE"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_pulumi_import_id": "MFP-QA1/b4732409-3005-4b7e-92bb-031127ac231f",
+      "_resource_id": "b4732409-3005-4b7e-92bb-031127ac231f",
+      "_resource_type": "keycloak.Group",
+      "order": 0,
+      "parent_group_name": null,
+      "name": "MIAX PEARL Equities",
+      "path": "/MIAX PEARL Equities",
+      "realm_roles": [
+        "MIAX_PEARL_EQUITIES"
+      ],
+      "subgroups": [
+        {
+          "_pulumi_import_id": "MFP-QA1/c4d4f20e-123c-4c59-a3e5-f3718df4dee9",
+          "_resource_id": "c4d4f20e-123c-4c59-a3e5-f3718df4dee9",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "Firm Configuration",
+          "path": "/MIAX PEARL Equities/Firm Configuration",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/b16eae31-c0d3-4467-b83f-89f38f3cfb00",
+              "_resource_id": "b16eae31-c0d3-4467-b83f-89f38f3cfb00",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Firm Configuration",
+              "name": "Locate Account Validation",
+              "path": "/MIAX PEARL Equities/Firm Configuration/Locate Account Validation",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/ccb63489-1108-409e-a882-6df7a8498399",
+                  "_resource_id": "ccb63489-1108-409e-a882-6df7a8498399",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation WRITE",
+                  "path": "/MIAX PEARL Equities/Firm Configuration/Locate Account Validation/Locate Account Validation WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/e41b2106-8390-4f5b-8905-8552ca6219a7",
+                  "_resource_id": "e41b2106-8390-4f5b-8905-8552ca6219a7",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation READ",
+                  "path": "/MIAX PEARL Equities/Firm Configuration/Locate Account Validation/Locate Account Validation READ"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/04ea5195-014e-47be-acc9-b437c0523e21",
+          "_resource_id": "04ea5195-014e-47be-acc9-b437c0523e21",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "Session Configuration",
+          "path": "/MIAX PEARL Equities/Session Configuration",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/c82af066-918f-4c73-86dd-3c0a7d22b288",
+              "_resource_id": "c82af066-918f-4c73-86dd-3c0a7d22b288",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "ADV Symbol Override",
+              "path": "/MIAX PEARL Equities/Session Configuration/ADV Symbol Override",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/024b529d-e548-40b4-8cdd-76d9e2717eaf",
+                  "_resource_id": "024b529d-e548-40b4-8cdd-76d9e2717eaf",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Symbol Override",
+                  "name": "ADV Symbol Override WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ADV Symbol Override/ADV Symbol Override WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/f638bb45-3437-456d-aa15-9344a05f9b42",
+                  "_resource_id": "f638bb45-3437-456d-aa15-9344a05f9b42",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Symbol Override",
+                  "name": "ADV Symbol Override READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ADV Symbol Override/ADV Symbol Override READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/9b09b0b4-d116-4af7-b5c9-2152a1f68547",
+              "_resource_id": "9b09b0b4-d116-4af7-b5c9-2152a1f68547",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Self Trade Protection",
+              "path": "/MIAX PEARL Equities/Session Configuration/Self Trade Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/5f01ffdf-8f12-4eea-a1e6-01583e077edb",
+                  "_resource_id": "5f01ffdf-8f12-4eea-a1e6-01583e077edb",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Self Trade Protection",
+                  "name": "Self Trade Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Self Trade Protection/Self Trade Protection WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/6df07712-1c03-45c6-83d0-0f4d8383d02f",
+                  "_resource_id": "6df07712-1c03-45c6-83d0-0f4d8383d02f",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Self Trade Protection",
+                  "name": "Self Trade Protection READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Self Trade Protection/Self Trade Protection READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/b67b89d8-0a5b-4f93-9b7b-2e919739ac7b",
+              "_resource_id": "b67b89d8-0a5b-4f93-9b7b-2e919739ac7b",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Maximum Order Size",
+              "path": "/MIAX PEARL Equities/Session Configuration/Maximum Order Size",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/e1392219-e366-49fd-8fdc-cc6931485006",
+                  "_resource_id": "e1392219-e366-49fd-8fdc-cc6931485006",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Order Size",
+                  "name": "Maximum Order Size WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Order Size/Maximum Order Size WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/23bae416-9fda-47ab-a030-af585be6e7f7",
+                  "_resource_id": "23bae416-9fda-47ab-a030-af585be6e7f7",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Order Size",
+                  "name": "Maximum Order Size READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Order Size/Maximum Order Size READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/b8c8e776-134f-4200-aa57-3a66867ad965",
+              "_resource_id": "b8c8e776-134f-4200-aa57-3a66867ad965",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "ADV Check",
+              "path": "/MIAX PEARL Equities/Session Configuration/ADV Check",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/3dd2e7fa-6d31-4cec-b7ef-6b87084fc2f7",
+                  "_resource_id": "3dd2e7fa-6d31-4cec-b7ef-6b87084fc2f7",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Check",
+                  "name": "ADV Check WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ADV Check/ADV Check WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/74974d1e-69e6-4076-900d-94e1f262ff5d",
+                  "_resource_id": "74974d1e-69e6-4076-900d-94e1f262ff5d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Check",
+                  "name": "ADV Check READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ADV Check/ADV Check READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/a667215c-ad6a-45e2-b3ff-64d8d0de1675",
+              "_resource_id": "a667215c-ad6a-45e2-b3ff-64d8d0de1675",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Locate Account Validation",
+              "path": "/MIAX PEARL Equities/Session Configuration/Locate Account Validation",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/3cde3024-821f-44c5-95ac-209a2a162d84",
+                  "_resource_id": "3cde3024-821f-44c5-95ac-209a2a162d84",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Locate Account Validation/Locate Account Validation WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/a7be465c-90b9-4019-beb0-fef5cbb133f3",
+                  "_resource_id": "a7be465c-90b9-4019-beb0-fef5cbb133f3",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Locate Account Validation/Locate Account Validation READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/a0bcae1f-2d95-4275-88a2-c2b12e7ef48a",
+              "_resource_id": "a0bcae1f-2d95-4275-88a2-c2b12e7ef48a",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Market Impact Caller",
+              "path": "/MIAX PEARL Equities/Session Configuration/Market Impact Caller",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/2cb2266a-09e9-478b-8143-2422f748fc69",
+                  "_resource_id": "2cb2266a-09e9-478b-8143-2422f748fc69",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Impact Caller",
+                  "name": "Market Impact Caller READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Market Impact Caller/Market Impact Caller READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/ba3ee724-ca85-4ef0-ab30-b1bd76fb57fe",
+                  "_resource_id": "ba3ee724-ca85-4ef0-ab30-b1bd76fb57fe",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Impact Caller",
+                  "name": "Market Impact Caller WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Market Impact Caller/Market Impact Caller WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/10bf94a2-4ba6-462a-9d47-c9044c39138c",
+              "_resource_id": "10bf94a2-4ba6-462a-9d47-c9044c39138c",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Reg SHO Restricted Security List",
+              "path": "/MIAX PEARL Equities/Session Configuration/Reg SHO Restricted Security List",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/a02ff723-a428-4256-8717-b3da7ddaa287",
+                  "_resource_id": "a02ff723-a428-4256-8717-b3da7ddaa287",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Reg SHO Restricted Security List",
+                  "name": "Reg SHO Restricted Security List WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Reg SHO Restricted Security List/Reg SHO Restricted Security List WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/bac91b55-cc2a-4c22-b916-cc1308536563",
+                  "_resource_id": "bac91b55-cc2a-4c22-b916-cc1308536563",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Reg SHO Restricted Security List",
+                  "name": "Reg SHO Restricted Security List READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Reg SHO Restricted Security List/Reg SHO Restricted Security List READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/2ac5823e-bdcf-4407-ae2e-00d9e453b8d2",
+              "_resource_id": "2ac5823e-bdcf-4407-ae2e-00d9e453b8d2",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Short Sale Reject",
+              "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/7ea946be-a1b1-4243-b4f5-a71ff475eadf",
+                  "_resource_id": "7ea946be-a1b1-4243-b4f5-a71ff475eadf",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Reject",
+                  "name": "Short Sale Reject READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Reject/Short Sale Reject READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/99f506dd-3355-4df2-a445-d8d1bbbef89d",
+                  "_resource_id": "99f506dd-3355-4df2-a445-d8d1bbbef89d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Reject",
+                  "name": "Short Sale Reject WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Reject/Short Sale Reject WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/ad0e2c80-70ff-4bd8-b47f-30d1a6041715",
+              "_resource_id": "ad0e2c80-70ff-4bd8-b47f-30d1a6041715",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Maximum Limit Order Notional Value Protection",
+              "path": "/MIAX PEARL Equities/Session Configuration/Maximum Limit Order Notional Value Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/7f96e70c-cc09-46de-9e32-0341ab838400",
+                  "_resource_id": "7f96e70c-cc09-46de-9e32-0341ab838400",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Limit Order Notional Value Protection",
+                  "name": "Maximum Limit Order Notional Value Protection READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Limit Order Notional Value Protection/Maximum Limit Order Notional Value Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/3a776cfa-c325-48c1-bfc5-195352322c3a",
+                  "_resource_id": "3a776cfa-c325-48c1-bfc5-195352322c3a",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Limit Order Notional Value Protection",
+                  "name": "Maximum Limit Order Notional Value Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Limit Order Notional Value Protection/Maximum Limit Order Notional Value Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/b363601d-4ee5-4913-a3d9-b52ba3e6f635",
+              "_resource_id": "b363601d-4ee5-4913-a3d9-b52ba3e6f635",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Allow Test Securities",
+              "path": "/MIAX PEARL Equities/Session Configuration/Allow Test Securities",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/510a44da-ba0d-452f-89b2-f0158ce976f4",
+                  "_resource_id": "510a44da-ba0d-452f-89b2-f0158ce976f4",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Allow Test Securities",
+                  "name": "Allow Test Securities READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Allow Test Securities/Allow Test Securities READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/47beb141-7257-4d73-bf5a-b0e7d4676185",
+                  "_resource_id": "47beb141-7257-4d73-bf5a-b0e7d4676185",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Allow Test Securities",
+                  "name": "Allow Test Securities WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Allow Test Securities/Allow Test Securities WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/ec44f30e-c546-4350-868d-e9d18d0edede",
+              "_resource_id": "ec44f30e-c546-4350-868d-e9d18d0edede",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Short Sale Exempt Reject",
+              "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Exempt Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/7e1fa4e1-3039-4685-b808-4b586be0a860",
+                  "_resource_id": "7e1fa4e1-3039-4685-b808-4b586be0a860",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Exempt Reject",
+                  "name": "Short Sale Exempt Reject READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Exempt Reject/Short Sale Exempt Reject READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/242d948b-6f67-4e70-a2b6-5f3a50473360",
+                  "_resource_id": "242d948b-6f67-4e70-a2b6-5f3a50473360",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Exempt Reject",
+                  "name": "Short Sale Exempt Reject WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Short Sale Exempt Reject/Short Sale Exempt Reject WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/5283ac02-84ad-4b11-a8ed-7c475266524c",
+              "_resource_id": "5283ac02-84ad-4b11-a8ed-7c475266524c",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "ISO Reject",
+              "path": "/MIAX PEARL Equities/Session Configuration/ISO Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/efc116b2-c3bc-413e-96f8-935bd865e954",
+                  "_resource_id": "efc116b2-c3bc-413e-96f8-935bd865e954",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ISO Reject",
+                  "name": "ISO Reject WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ISO Reject/ISO Reject WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/9e3d4b85-3061-480d-9d5e-371136ef54ed",
+                  "_resource_id": "9e3d4b85-3061-480d-9d5e-371136ef54ed",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ISO Reject",
+                  "name": "ISO Reject READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/ISO Reject/ISO Reject READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/83e12df2-b8ea-4ae2-b10d-cb3aa63b2b09",
+              "_resource_id": "83e12df2-b8ea-4ae2-b10d-cb3aa63b2b09",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Add Update Limit Order Price Protection",
+              "path": "/MIAX PEARL Equities/Session Configuration/Add Update Limit Order Price Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/39b2ac00-248e-44cd-b05f-11f1a719da34",
+                  "_resource_id": "39b2ac00-248e-44cd-b05f-11f1a719da34",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Limit Order Price Protection",
+                  "name": "Add Update Limit Order Price Protection READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Add Update Limit Order Price Protection/Add Update Limit Order Price Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/4c7a74a6-690a-4a93-92c3-0e1c8359f800",
+                  "_resource_id": "4c7a74a6-690a-4a93-92c3-0e1c8359f800",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Limit Order Price Protection",
+                  "name": "Add Update Limit Order Price Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Add Update Limit Order Price Protection/Add Update Limit Order Price Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/31d9212f-bba4-45c0-9fc6-3bfa76e7dab4",
+              "_resource_id": "31d9212f-bba4-45c0-9fc6-3bfa76e7dab4",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Maximum Market Order Notional Value Protection",
+              "path": "/MIAX PEARL Equities/Session Configuration/Maximum Market Order Notional Value Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/4692eb4b-0b10-4968-85b0-ae033c7e1a86",
+                  "_resource_id": "4692eb4b-0b10-4968-85b0-ae033c7e1a86",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Market Order Notional Value Protection",
+                  "name": "Maximum Market Order Notional Value Protection READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Market Order Notional Value Protection/Maximum Market Order Notional Value Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/788d3ffe-64d2-4100-8aa6-1791ef95668b",
+                  "_resource_id": "788d3ffe-64d2-4100-8aa6-1791ef95668b",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Market Order Notional Value Protection",
+                  "name": "Maximum Market Order Notional Value Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Maximum Market Order Notional Value Protection/Maximum Market Order Notional Value Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/197a2b82-c5f8-47ba-a6f7-c332e6e176ad",
+              "_resource_id": "197a2b82-c5f8-47ba-a6f7-c332e6e176ad",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Restricted Security List",
+              "path": "/MIAX PEARL Equities/Session Configuration/Restricted Security List",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/5db8daef-68ad-40c7-a0b8-328288d1bedb",
+                  "_resource_id": "5db8daef-68ad-40c7-a0b8-328288d1bedb",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Restricted Security List",
+                  "name": "Restricted Security List READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Restricted Security List/Restricted Security List READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/b1c154a7-2ed7-45cb-ac8b-923d66882480",
+                  "_resource_id": "b1c154a7-2ed7-45cb-ac8b-923d66882480",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Restricted Security List",
+                  "name": "Restricted Security List WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Restricted Security List/Restricted Security List WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/d975bd38-6c1c-48eb-a8b7-c19d4a7fa9fc",
+              "_resource_id": "d975bd38-6c1c-48eb-a8b7-c19d4a7fa9fc",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Override Capacity to Agency",
+              "path": "/MIAX PEARL Equities/Session Configuration/Override Capacity to Agency",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/9181031a-a04b-4e3f-9ed4-8c5bc976a4e2",
+                  "_resource_id": "9181031a-a04b-4e3f-9ed4-8c5bc976a4e2",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Override Capacity to Agency",
+                  "name": "Override Capacity to Agency WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Override Capacity to Agency/Override Capacity to Agency WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/a2df24e6-9803-4fab-9fb6-411f5d8bdbd6",
+                  "_resource_id": "a2df24e6-9803-4fab-9fb6-411f5d8bdbd6",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Override Capacity to Agency",
+                  "name": "Override Capacity to Agency READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Override Capacity to Agency/Override Capacity to Agency READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/2430672e-cbd6-40f7-8f73-93c65a306f31",
+              "_resource_id": "2430672e-cbd6-40f7-8f73-93c65a306f31",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Add Update Market Order Price Protection",
+              "path": "/MIAX PEARL Equities/Session Configuration/Add Update Market Order Price Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/7d1137a4-41e7-4295-8719-53688b71a216",
+                  "_resource_id": "7d1137a4-41e7-4295-8719-53688b71a216",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Market Order Price Protection",
+                  "name": "Add Update Market Order Price Protection READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Add Update Market Order Price Protection/Add Update Market Order Price Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/4e2fe2d4-8c71-4e2d-87cc-03a21d319dd0",
+                  "_resource_id": "4e2fe2d4-8c71-4e2d-87cc-03a21d319dd0",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Market Order Price Protection",
+                  "name": "Add Update Market Order Price Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Add Update Market Order Price Protection/Add Update Market Order Price Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/0b19b6e2-80ea-48bb-9962-23e55fe070ba",
+              "_resource_id": "0b19b6e2-80ea-48bb-9962-23e55fe070ba",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Non Agency Reject",
+              "path": "/MIAX PEARL Equities/Session Configuration/Non Agency Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/63c82145-cdff-4202-8e44-f01b465c4f7d",
+                  "_resource_id": "63c82145-cdff-4202-8e44-f01b465c4f7d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Non Agency Reject",
+                  "name": "Non Agency Reject WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Non Agency Reject/Non Agency Reject WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/651e8aef-3222-453e-982d-296a23830d8d",
+                  "_resource_id": "651e8aef-3222-453e-982d-296a23830d8d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Non Agency Reject",
+                  "name": "Non Agency Reject READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Non Agency Reject/Non Agency Reject READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/7e490c52-bb9f-4a55-83e0-281d539d5554",
+              "_resource_id": "7e490c52-bb9f-4a55-83e0-281d539d5554",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Session Configuration",
+              "name": "Market Order Reject",
+              "path": "/MIAX PEARL Equities/Session Configuration/Market Order Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/a4e09689-bad8-46b2-8347-39c1e3695de8",
+                  "_resource_id": "a4e09689-bad8-46b2-8347-39c1e3695de8",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Order Reject",
+                  "name": "Market Order Reject READ",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Market Order Reject/Market Order Reject READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/de17c0e9-41c9-4836-8220-514322273460",
+                  "_resource_id": "de17c0e9-41c9-4836-8220-514322273460",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Order Reject",
+                  "name": "Market Order Reject WRITE",
+                  "path": "/MIAX PEARL Equities/Session Configuration/Market Order Reject/Market Order Reject WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/2c3fa146-42f6-4980-b088-5822ff51e71e",
+          "_resource_id": "2c3fa146-42f6-4980-b088-5822ff51e71e",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "Risk Protections",
+          "path": "/MIAX PEARL Equities/Risk Protections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/2c0abc37-4723-460f-a2a4-c701ee3e9115",
+              "_resource_id": "2c0abc37-4723-460f-a2a4-c701ee3e9115",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Session Management",
+              "path": "/MIAX PEARL Equities/Risk Protections/Session Management",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/9076df00-296f-4109-9733-b4d37e8ea00e",
+                  "_resource_id": "9076df00-296f-4109-9733-b4d37e8ea00e",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Session Management",
+                  "name": "Session Management WRITE",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Session Management/Session Management WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/c8e673e2-bfcc-4448-96d6-0cf05bf00d77",
+                  "_resource_id": "c8e673e2-bfcc-4448-96d6-0cf05bf00d77",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Session Management",
+                  "name": "Session Management READ",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Session Management/Session Management READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/bbf617ea-883a-43e9-9511-330472b03cae",
+              "_resource_id": "bbf617ea-883a-43e9-9511-330472b03cae",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Cumulative Risk Management",
+              "path": "/MIAX PEARL Equities/Risk Protections/Cumulative Risk Management",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/ab2a010b-0524-4c7c-a889-51eb4b40379d",
+                  "_resource_id": "ab2a010b-0524-4c7c-a889-51eb4b40379d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Cumulative Risk Management",
+                  "name": "Cumulative Risk Management WRITE",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Cumulative Risk Management/Cumulative Risk Management WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/cf78ccba-693b-489b-ad51-0e779731c22c",
+                  "_resource_id": "cf78ccba-693b-489b-ad51-0e779731c22c",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Cumulative Risk Management",
+                  "name": "Cumulative Risk Management READ",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Cumulative Risk Management/Cumulative Risk Management READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/729c976f-8219-4ca1-9557-eade28766cbd",
+              "_resource_id": "729c976f-8219-4ca1-9557-eade28766cbd",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections READ",
+              "path": "/MIAX PEARL Equities/Risk Protections/Risk Protections READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/29124d02-0b97-4488-97a9-3921016bc4e3",
+              "_resource_id": "29124d02-0b97-4488-97a9-3921016bc4e3",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections WRITE",
+              "path": "/MIAX PEARL Equities/Risk Protections/Risk Protections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/f595dbdf-21fc-4ae4-82d1-6bc45ee58678",
+              "_resource_id": "f595dbdf-21fc-4ae4-82d1-6bc45ee58678",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "MPID Management",
+              "path": "/MIAX PEARL Equities/Risk Protections/MPID Management",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/f36e5a36-c5c7-4105-93c6-e69dfd08eb60",
+                  "_resource_id": "f36e5a36-c5c7-4105-93c6-e69dfd08eb60",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "MPID Management",
+                  "name": "MPID Management WRITE",
+                  "path": "/MIAX PEARL Equities/Risk Protections/MPID Management/MPID Management WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/aed57c2c-57ba-45f3-891b-e03fd9925007",
+                  "_resource_id": "aed57c2c-57ba-45f3-891b-e03fd9925007",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "MPID Management",
+                  "name": "MPID Management READ",
+                  "path": "/MIAX PEARL Equities/Risk Protections/MPID Management/MPID Management READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/a4458677-e4a9-4284-9d06-80092b434b18",
+              "_resource_id": "a4458677-e4a9-4284-9d06-80092b434b18",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Duplicate Order Protection",
+              "path": "/MIAX PEARL Equities/Risk Protections/Duplicate Order Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/a9e9ef0a-e914-4e55-81db-94a1ae3f2afb",
+                  "_resource_id": "a9e9ef0a-e914-4e55-81db-94a1ae3f2afb",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Duplicate Order Protection",
+                  "name": "Duplicate Order Protection READ",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Duplicate Order Protection/Duplicate Order Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/94144e84-7007-4d98-b4ea-17b0aeb4c33e",
+                  "_resource_id": "94144e84-7007-4d98-b4ea-17b0aeb4c33e",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Duplicate Order Protection",
+                  "name": "Duplicate Order Protection WRITE",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Duplicate Order Protection/Duplicate Order Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/7168fed2-b960-40bf-97a6-753aa4f5822e",
+              "_resource_id": "7168fed2-b960-40bf-97a6-753aa4f5822e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Order Rate Management",
+              "path": "/MIAX PEARL Equities/Risk Protections/Order Rate Management",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/0ab32824-3821-454b-b558-4f4b7e3e9f56",
+                  "_resource_id": "0ab32824-3821-454b-b558-4f4b7e3e9f56",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Order Rate Management",
+                  "name": "Order Rate Management READ",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Order Rate Management/Order Rate Management READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/ca6b14ac-ff62-4742-acf3-69b3eb85edbd",
+                  "_resource_id": "ca6b14ac-ff62-4742-acf3-69b3eb85edbd",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Order Rate Management",
+                  "name": "Order Rate Management WRITE",
+                  "path": "/MIAX PEARL Equities/Risk Protections/Order Rate Management/Order Rate Management WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/4cc938ba-468a-45e7-bd9e-aa792b0007a9",
+          "_resource_id": "4cc938ba-468a-45e7-bd9e-aa792b0007a9",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "MPID Configuration",
+          "path": "/MIAX PEARL Equities/MPID Configuration",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/31237b2d-216a-4ce9-899d-c510cc4f83fe",
+              "_resource_id": "31237b2d-216a-4ce9-899d-c510cc4f83fe",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Locate Account Validation",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Locate Account Validation",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/2c647c13-73ce-44cc-a0c0-06a63cf2c502",
+                  "_resource_id": "2c647c13-73ce-44cc-a0c0-06a63cf2c502",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Locate Account Validation/Locate Account Validation WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/e382e46b-0b85-4b07-b090-de5c2acc335f",
+                  "_resource_id": "e382e46b-0b85-4b07-b090-de5c2acc335f",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Locate Account Validation",
+                  "name": "Locate Account Validation READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Locate Account Validation/Locate Account Validation READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/1cfffde0-310b-4529-a5c6-c230129ed3b5",
+              "_resource_id": "1cfffde0-310b-4529-a5c6-c230129ed3b5",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Add Update Limit Order Price Protection",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Limit Order Price Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/5b098b7d-f2dd-4c33-a95c-7cc8cdc59578",
+                  "_resource_id": "5b098b7d-f2dd-4c33-a95c-7cc8cdc59578",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Limit Order Price Protection",
+                  "name": "Add Update Limit Order Price Protection WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Limit Order Price Protection/Add Update Limit Order Price Protection WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/6371c0a5-4760-4861-9b28-e58188e99155",
+                  "_resource_id": "6371c0a5-4760-4861-9b28-e58188e99155",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Limit Order Price Protection",
+                  "name": "Add Update Limit Order Price Protection READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Limit Order Price Protection/Add Update Limit Order Price Protection READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/7b246efd-7ebe-4d32-9b50-7a9a9fe70ef0",
+              "_resource_id": "7b246efd-7ebe-4d32-9b50-7a9a9fe70ef0",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Maximum Order Size",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Order Size",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/f52602f7-640f-4d3c-a391-43cc6b91982c",
+                  "_resource_id": "f52602f7-640f-4d3c-a391-43cc6b91982c",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Order Size",
+                  "name": "Maximum Order Size WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Order Size/Maximum Order Size WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/7cb90702-9c7b-493d-a018-28fe0e03f046",
+                  "_resource_id": "7cb90702-9c7b-493d-a018-28fe0e03f046",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Order Size",
+                  "name": "Maximum Order Size READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Order Size/Maximum Order Size READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/c4be4853-1c84-45c4-b280-487a6bee490e",
+              "_resource_id": "c4be4853-1c84-45c4-b280-487a6bee490e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Short Sale Reject",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/e53bd819-873d-4aee-b924-b0e526c3f305",
+                  "_resource_id": "e53bd819-873d-4aee-b924-b0e526c3f305",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Reject",
+                  "name": "Short Sale Reject WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Reject/Short Sale Reject WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/85831f13-b7cc-434f-bb82-27dfcc36ba35",
+                  "_resource_id": "85831f13-b7cc-434f-bb82-27dfcc36ba35",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Reject",
+                  "name": "Short Sale Reject READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Reject/Short Sale Reject READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/5ca7181d-1485-47d1-8535-df6b2ff0818c",
+              "_resource_id": "5ca7181d-1485-47d1-8535-df6b2ff0818c",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "ISO Reject",
+              "path": "/MIAX PEARL Equities/MPID Configuration/ISO Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/ae6a8d66-7b15-4a45-b455-58d7a15528bf",
+                  "_resource_id": "ae6a8d66-7b15-4a45-b455-58d7a15528bf",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ISO Reject",
+                  "name": "ISO Reject READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ISO Reject/ISO Reject READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/6955de61-97c2-437d-828f-c5e5fc65c81a",
+                  "_resource_id": "6955de61-97c2-437d-828f-c5e5fc65c81a",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ISO Reject",
+                  "name": "ISO Reject WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ISO Reject/ISO Reject WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/c0741b49-af78-4fc8-8744-e81008a8c1ac",
+              "_resource_id": "c0741b49-af78-4fc8-8744-e81008a8c1ac",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Market Impact Caller",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Market Impact Caller",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/94da38f0-ba08-490c-a80d-af2dcccca447",
+                  "_resource_id": "94da38f0-ba08-490c-a80d-af2dcccca447",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Impact Caller",
+                  "name": "Market Impact Caller WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Market Impact Caller/Market Impact Caller WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/2578c17c-f522-48b8-b339-e39cb8651344",
+                  "_resource_id": "2578c17c-f522-48b8-b339-e39cb8651344",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Impact Caller",
+                  "name": "Market Impact Caller READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Market Impact Caller/Market Impact Caller READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/7bd829dd-4ad8-40d9-a883-355d8089ef0f",
+              "_resource_id": "7bd829dd-4ad8-40d9-a883-355d8089ef0f",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Non Agency Reject",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Non Agency Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/49eb3492-fef2-4285-88bb-635309eeb607",
+                  "_resource_id": "49eb3492-fef2-4285-88bb-635309eeb607",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Non Agency Reject",
+                  "name": "Non Agency Reject WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Non Agency Reject/Non Agency Reject WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/5df7a993-b932-47d2-b36b-105946c01706",
+                  "_resource_id": "5df7a993-b932-47d2-b36b-105946c01706",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Non Agency Reject",
+                  "name": "Non Agency Reject READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Non Agency Reject/Non Agency Reject READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/eb2e057d-fae0-4a03-9042-18779f98078f",
+              "_resource_id": "eb2e057d-fae0-4a03-9042-18779f98078f",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Market Order Reject",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Market Order Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/449ea2fc-0128-4845-85a9-35d656215c03",
+                  "_resource_id": "449ea2fc-0128-4845-85a9-35d656215c03",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Order Reject",
+                  "name": "Market Order Reject READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Market Order Reject/Market Order Reject READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/e9957c8c-d5d8-49a4-9bde-e8e6ebf59693",
+                  "_resource_id": "e9957c8c-d5d8-49a4-9bde-e8e6ebf59693",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Market Order Reject",
+                  "name": "Market Order Reject WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Market Order Reject/Market Order Reject WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/d4339296-e9dd-4fd1-9c0e-862fc5ee8f98",
+              "_resource_id": "d4339296-e9dd-4fd1-9c0e-862fc5ee8f98",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Restricted Security List",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Restricted Security List",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/b7e7eeff-f4f3-4c83-968b-41e1351e900f",
+                  "_resource_id": "b7e7eeff-f4f3-4c83-968b-41e1351e900f",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Restricted Security List",
+                  "name": "Restricted Security List READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Restricted Security List/Restricted Security List READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/ddfd3f24-e762-409b-a1f2-c4fc37b4688d",
+                  "_resource_id": "ddfd3f24-e762-409b-a1f2-c4fc37b4688d",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Restricted Security List",
+                  "name": "Restricted Security List WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Restricted Security List/Restricted Security List WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/0b06dcff-4627-47e5-a0c8-c95aabc90a69",
+              "_resource_id": "0b06dcff-4627-47e5-a0c8-c95aabc90a69",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Maximum Market Order Notional Value Protection",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Market Order Notional Value Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/ef953966-e63a-4e94-aac9-0573aee1a85f",
+                  "_resource_id": "ef953966-e63a-4e94-aac9-0573aee1a85f",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Market Order Notional Value Protection",
+                  "name": "Maximum Market Order Notional Value Protection WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Market Order Notional Value Protection/Maximum Market Order Notional Value Protection WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/9c337f1b-1630-4b1e-a3bd-dcb4365dc1fe",
+                  "_resource_id": "9c337f1b-1630-4b1e-a3bd-dcb4365dc1fe",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Market Order Notional Value Protection",
+                  "name": "Maximum Market Order Notional Value Protection READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Market Order Notional Value Protection/Maximum Market Order Notional Value Protection READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/3e75c368-b0f4-4159-a106-a0dbcab4e70f",
+              "_resource_id": "3e75c368-b0f4-4159-a106-a0dbcab4e70f",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Maximum Limit Order Notional Value Protection",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Limit Order Notional Value Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/a4bbce23-46d9-4500-a067-56b75eb9cfd4",
+                  "_resource_id": "a4bbce23-46d9-4500-a067-56b75eb9cfd4",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Limit Order Notional Value Protection",
+                  "name": "Maximum Limit Order Notional Value Protection WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Limit Order Notional Value Protection/Maximum Limit Order Notional Value Protection WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/1cb8ddae-66d8-4c6e-8ae4-068c4e0616a9",
+                  "_resource_id": "1cb8ddae-66d8-4c6e-8ae4-068c4e0616a9",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Maximum Limit Order Notional Value Protection",
+                  "name": "Maximum Limit Order Notional Value Protection READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Maximum Limit Order Notional Value Protection/Maximum Limit Order Notional Value Protection READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/c5fb37c8-3992-4973-aa1c-c7c2cf349c3b",
+              "_resource_id": "c5fb37c8-3992-4973-aa1c-c7c2cf349c3b",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "ADV Symbol Override",
+              "path": "/MIAX PEARL Equities/MPID Configuration/ADV Symbol Override",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/4ef551e4-983d-4767-b83c-971c722a51ac",
+                  "_resource_id": "4ef551e4-983d-4767-b83c-971c722a51ac",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Symbol Override",
+                  "name": "ADV Symbol Override WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ADV Symbol Override/ADV Symbol Override WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/0a3377df-dfb4-4bba-809f-8fa5d406f9c8",
+                  "_resource_id": "0a3377df-dfb4-4bba-809f-8fa5d406f9c8",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Symbol Override",
+                  "name": "ADV Symbol Override READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ADV Symbol Override/ADV Symbol Override READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/0b7796e2-77ba-43d9-85c5-355e8081ac72",
+              "_resource_id": "0b7796e2-77ba-43d9-85c5-355e8081ac72",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Short Sale Exempt Reject",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Exempt Reject",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/0d9edc24-5e55-4961-8300-e5e8b55c2384",
+                  "_resource_id": "0d9edc24-5e55-4961-8300-e5e8b55c2384",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Exempt Reject",
+                  "name": "Short Sale Exempt Reject WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Exempt Reject/Short Sale Exempt Reject WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/dbdf8694-88e0-4c70-85b4-6825e1c20d3c",
+                  "_resource_id": "dbdf8694-88e0-4c70-85b4-6825e1c20d3c",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Short Sale Exempt Reject",
+                  "name": "Short Sale Exempt Reject READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Short Sale Exempt Reject/Short Sale Exempt Reject READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/764c0561-cf3e-4dd9-8623-a2298c6b4d9b",
+              "_resource_id": "764c0561-cf3e-4dd9-8623-a2298c6b4d9b",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "ADV Check",
+              "path": "/MIAX PEARL Equities/MPID Configuration/ADV Check",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/c2cd1225-6078-4ae6-95d5-524d18c0c1bd",
+                  "_resource_id": "c2cd1225-6078-4ae6-95d5-524d18c0c1bd",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Check",
+                  "name": "ADV Check WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ADV Check/ADV Check WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/37b01496-5c80-406b-9b87-d03bea68611f",
+                  "_resource_id": "37b01496-5c80-406b-9b87-d03bea68611f",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "ADV Check",
+                  "name": "ADV Check READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/ADV Check/ADV Check READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/aed0659c-6635-4c71-8d53-08157642b313",
+              "_resource_id": "aed0659c-6635-4c71-8d53-08157642b313",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Add Update Market Order Price Protection",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Market Order Price Protection",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/0009145d-870c-45c7-938d-c3aa7a319837",
+                  "_resource_id": "0009145d-870c-45c7-938d-c3aa7a319837",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Market Order Price Protection",
+                  "name": "Add Update Market Order Price Protection READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Market Order Price Protection/Add Update Market Order Price Protection READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/62a2daf5-e9a5-4e95-9d72-9d7429379995",
+                  "_resource_id": "62a2daf5-e9a5-4e95-9d72-9d7429379995",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Add Update Market Order Price Protection",
+                  "name": "Add Update Market Order Price Protection WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Add Update Market Order Price Protection/Add Update Market Order Price Protection WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/7b2c9fdf-c90b-4be3-8585-378f0bb7926e",
+              "_resource_id": "7b2c9fdf-c90b-4be3-8585-378f0bb7926e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Configuration",
+              "name": "Reg SHO Restricted Security List",
+              "path": "/MIAX PEARL Equities/MPID Configuration/Reg SHO Restricted Security List",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/52f20cd8-c9c8-44a7-91cf-fd68387e8e9c",
+                  "_resource_id": "52f20cd8-c9c8-44a7-91cf-fd68387e8e9c",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Reg SHO Restricted Security List",
+                  "name": "Reg SHO Restricted Security List READ",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Reg SHO Restricted Security List/Reg SHO Restricted Security List READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/1a1faabe-277e-4084-a730-5d6e856d132a",
+                  "_resource_id": "1a1faabe-277e-4084-a730-5d6e856d132a",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Reg SHO Restricted Security List",
+                  "name": "Reg SHO Restricted Security List WRITE",
+                  "path": "/MIAX PEARL Equities/MPID Configuration/Reg SHO Restricted Security List/Reg SHO Restricted Security List WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/066ef25f-c9c9-475d-8680-0223b9fd6d6e",
+          "_resource_id": "066ef25f-c9c9-475d-8680-0223b9fd6d6e",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "Trade Corrections",
+          "path": "/MIAX PEARL Equities/Trade Corrections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/1c0acd44-3a68-449e-842d-8e18656f479f",
+              "_resource_id": "1c0acd44-3a68-449e-842d-8e18656f479f",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Default",
+              "path": "/MIAX PEARL Equities/Trade Corrections/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/6fa1dfbb-ab4a-4931-a324-11f44a8add11",
+                  "_resource_id": "6fa1dfbb-ab4a-4931-a324-11f44a8add11",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX PEARL Equities/Trade Corrections/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/9058247b-baff-477d-9fb1-85ba87093e28",
+                  "_resource_id": "9058247b-baff-477d-9fb1-85ba87093e28",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX PEARL Equities/Trade Corrections/Default/Default WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/3dfd9374-fd26-4b60-8ff3-38286e85bf80",
+              "_resource_id": "3dfd9374-fd26-4b60-8ff3-38286e85bf80",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections READ",
+              "path": "/MIAX PEARL Equities/Trade Corrections/Trade Corrections READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/08032efe-ac04-40e0-a9f9-f5fe94acb8cc",
+              "_resource_id": "08032efe-ac04-40e0-a9f9-f5fe94acb8cc",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections WRITE",
+              "path": "/MIAX PEARL Equities/Trade Corrections/Trade Corrections WRITE"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/366a4548-1bf0-43f1-8ab3-9a1f664dc3a1",
+          "_resource_id": "366a4548-1bf0-43f1-8ab3-9a1f664dc3a1",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "Market Maker Assignments",
+          "path": "/MIAX PEARL Equities/Market Maker Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/cc6747f3-3b12-4957-be45-255cc32d9249",
+              "_resource_id": "cc6747f3-3b12-4957-be45-255cc32d9249",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Market Maker Assignments",
+              "name": "Default",
+              "path": "/MIAX PEARL Equities/Market Maker Assignments/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/dece3ecd-b678-4ff2-989a-82e90c0a1cee",
+                  "_resource_id": "dece3ecd-b678-4ff2-989a-82e90c0a1cee",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX PEARL Equities/Market Maker Assignments/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/66d66e97-9438-40e2-a067-1d9fbe229c53",
+                  "_resource_id": "66d66e97-9438-40e2-a067-1d9fbe229c53",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX PEARL Equities/Market Maker Assignments/Default/Default WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/0f871f74-2abb-49e8-9161-4e1ffb96bccb",
+          "_resource_id": "0f871f74-2abb-49e8-9161-4e1ffb96bccb",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Equities",
+          "name": "MPID Assignments",
+          "path": "/MIAX PEARL Equities/MPID Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/65ed90e8-7d8d-46bf-a5c8-3af3e3fa3ed7",
+              "_resource_id": "65ed90e8-7d8d-46bf-a5c8-3af3e3fa3ed7",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments READ",
+              "path": "/MIAX PEARL Equities/MPID Assignments/MPID Assignments READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/cf8b6084-010a-43a4-91fe-d7bbad2303bc",
+              "_resource_id": "cf8b6084-010a-43a4-91fe-d7bbad2303bc",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments WRITE",
+              "path": "/MIAX PEARL Equities/MPID Assignments/MPID Assignments WRITE"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_pulumi_import_id": "MFP-QA1/121e2e59-17fa-40f4-a98a-2ea5b47bfb48",
+      "_resource_id": "121e2e59-17fa-40f4-a98a-2ea5b47bfb48",
+      "_resource_type": "keycloak.Group",
+      "order": 0,
+      "parent_group_name": null,
+      "name": "MIAX PEARL Options",
+      "path": "/MIAX PEARL Options",
+      "realm_roles": [
+        "MIAX_PEARL_OPTIONS"
+      ],
+      "subgroups": [
+        {
+          "_pulumi_import_id": "MFP-QA1/20dceff0-25bc-4462-9541-2e37db2741b0",
+          "_resource_id": "20dceff0-25bc-4462-9541-2e37db2741b0",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Options",
+          "name": "MPID Assignments",
+          "path": "/MIAX PEARL Options/MPID Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/d414c19a-4a95-4ef4-b6b0-4cdf217f9c39",
+              "_resource_id": "d414c19a-4a95-4ef4-b6b0-4cdf217f9c39",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments READ",
+              "path": "/MIAX PEARL Options/MPID Assignments/MPID Assignments READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/f652326a-4e71-4927-8af2-6d4b347471bb",
+              "_resource_id": "f652326a-4e71-4927-8af2-6d4b347471bb",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments WRITE",
+              "path": "/MIAX PEARL Options/MPID Assignments/MPID Assignments WRITE"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/3303cc87-7d5f-4691-ba12-062877cc108e",
+          "_resource_id": "3303cc87-7d5f-4691-ba12-062877cc108e",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Options",
+          "name": "Trade Corrections",
+          "path": "/MIAX PEARL Options/Trade Corrections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/f1735062-6e83-4de4-a31e-97812e965cab",
+              "_resource_id": "f1735062-6e83-4de4-a31e-97812e965cab",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections READ",
+              "path": "/MIAX PEARL Options/Trade Corrections/Trade Corrections READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/05fbdfe8-b205-4b30-860f-2f85ea06735e",
+              "_resource_id": "05fbdfe8-b205-4b30-860f-2f85ea06735e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Default",
+              "path": "/MIAX PEARL Options/Trade Corrections/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/aeb2742b-a071-4d9f-b7d2-3b8a4bc1a7b5",
+                  "_resource_id": "aeb2742b-a071-4d9f-b7d2-3b8a4bc1a7b5",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX PEARL Options/Trade Corrections/Default/Default WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/678999db-5c06-47de-9a5c-6a34010a31d6",
+                  "_resource_id": "678999db-5c06-47de-9a5c-6a34010a31d6",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX PEARL Options/Trade Corrections/Default/Default READ"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/628eb7a5-0d8d-4d11-894d-592a0a55690d",
+              "_resource_id": "628eb7a5-0d8d-4d11-894d-592a0a55690d",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections WRITE",
+              "path": "/MIAX PEARL Options/Trade Corrections/Trade Corrections WRITE"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/c3553e3d-a3c2-4da9-bb4f-0fbb21f2d4bb",
+          "_resource_id": "c3553e3d-a3c2-4da9-bb4f-0fbb21f2d4bb",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Options",
+          "name": "Market Maker Assignments",
+          "path": "/MIAX PEARL Options/Market Maker Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/17f9cadb-6a8f-4f85-b81f-ba46e62bb61e",
+              "_resource_id": "17f9cadb-6a8f-4f85-b81f-ba46e62bb61e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Market Maker Assignments",
+              "name": "Default",
+              "path": "/MIAX PEARL Options/Market Maker Assignments/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/6db73bf9-b23c-4062-988c-392cce58552e",
+                  "_resource_id": "6db73bf9-b23c-4062-988c-392cce58552e",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX PEARL Options/Market Maker Assignments/Default/Default WRITE"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/1504bd1a-0fa8-4381-88db-f70cfcf4a738",
+                  "_resource_id": "1504bd1a-0fa8-4381-88db-f70cfcf4a738",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX PEARL Options/Market Maker Assignments/Default/Default READ"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/03a3eeaa-4ed9-4bcc-86d1-798d127e5a18",
+          "_resource_id": "03a3eeaa-4ed9-4bcc-86d1-798d127e5a18",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX PEARL Options",
+          "name": "Risk Protections",
+          "path": "/MIAX PEARL Options/Risk Protections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/9523f0d0-d9cc-4c5e-b049-5e658198e06f",
+              "_resource_id": "9523f0d0-d9cc-4c5e-b049-5e658198e06f",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections WRITE",
+              "path": "/MIAX PEARL Options/Risk Protections/Risk Protections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/ecdf008e-e31f-447d-9c9b-09af8ed4885c",
+              "_resource_id": "ecdf008e-e31f-447d-9c9b-09af8ed4885c",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections READ",
+              "path": "/MIAX PEARL Options/Risk Protections/Risk Protections READ"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_pulumi_import_id": "MFP-QA1/640c0718-43bd-4064-bf16-19e52acaa804",
+      "_resource_id": "640c0718-43bd-4064-bf16-19e52acaa804",
+      "_resource_type": "keycloak.Group",
+      "order": 0,
+      "parent_group_name": null,
+      "name": "MIAX Sapphire Options",
+      "path": "/MIAX Sapphire Options",
+      "subgroups": [
+        {
+          "_pulumi_import_id": "MFP-QA1/ef06afe0-1299-470b-9ae0-cfcb37ebe487",
+          "_resource_id": "ef06afe0-1299-470b-9ae0-cfcb37ebe487",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Sapphire Options",
+          "name": "Risk Protections",
+          "path": "/MIAX Sapphire Options/Risk Protections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/eabc3bbc-c124-4bd5-bd71-d69ea776f205",
+              "_resource_id": "eabc3bbc-c124-4bd5-bd71-d69ea776f205",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections WRITE",
+              "path": "/MIAX Sapphire Options/Risk Protections/Risk Protections WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/4301b555-1bd8-4bef-bdc9-c4a698d4be24",
+              "_resource_id": "4301b555-1bd8-4bef-bdc9-c4a698d4be24",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Risk Protections",
+              "name": "Risk Protections READ",
+              "path": "/MIAX Sapphire Options/Risk Protections/Risk Protections READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/ae524662-8ad4-4631-88fc-c59794e1b95b",
+          "_resource_id": "ae524662-8ad4-4631-88fc-c59794e1b95b",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Sapphire Options",
+          "name": "Market Maker Assignments",
+          "path": "/MIAX Sapphire Options/Market Maker Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/9abdd535-2be8-4834-a9a2-700da6d7c045",
+              "_resource_id": "9abdd535-2be8-4834-a9a2-700da6d7c045",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Market Maker Assignments",
+              "name": "Default",
+              "path": "/MIAX Sapphire Options/Market Maker Assignments/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/88d0def0-b6df-42cd-9a01-a28a223bb060",
+                  "_resource_id": "88d0def0-b6df-42cd-9a01-a28a223bb060",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Sapphire Options/Market Maker Assignments/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/b0e5db9c-fb77-4956-b4e9-cff2432ee83a",
+                  "_resource_id": "b0e5db9c-fb77-4956-b4e9-cff2432ee83a",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Sapphire Options/Market Maker Assignments/Default/Default WRITE"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/a1f9bd39-d56c-4678-8195-a85a7262c197",
+          "_resource_id": "a1f9bd39-d56c-4678-8195-a85a7262c197",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Sapphire Options",
+          "name": "MPID Assignments",
+          "path": "/MIAX Sapphire Options/MPID Assignments",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/130d0d6d-3752-4c7a-bb81-46623a0c6a82",
+              "_resource_id": "130d0d6d-3752-4c7a-bb81-46623a0c6a82",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments WRITE",
+              "path": "/MIAX Sapphire Options/MPID Assignments/MPID Assignments WRITE"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/f08ed908-c097-4fb8-ad17-1b213303fa06",
+              "_resource_id": "f08ed908-c097-4fb8-ad17-1b213303fa06",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "MPID Assignments",
+              "name": "MPID Assignments READ",
+              "path": "/MIAX Sapphire Options/MPID Assignments/MPID Assignments READ"
+            }
+          ]
+        },
+        {
+          "_pulumi_import_id": "MFP-QA1/39a84fbd-5b42-48c4-bb00-68377b19deb0",
+          "_resource_id": "39a84fbd-5b42-48c4-bb00-68377b19deb0",
+          "_resource_type": "keycloak.Group",
+          "order": 1,
+          "parent_group_name": "MIAX Sapphire Options",
+          "name": "Trade Corrections",
+          "path": "/MIAX Sapphire Options/Trade Corrections",
+          "subgroups": [
+            {
+              "_pulumi_import_id": "MFP-QA1/ec16d738-64c8-49ae-9a07-523bd2fc69ff",
+              "_resource_id": "ec16d738-64c8-49ae-9a07-523bd2fc69ff",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Default",
+              "path": "/MIAX Sapphire Options/Trade Corrections/Default",
+              "subgroups": [
+                {
+                  "_pulumi_import_id": "MFP-QA1/f85845a3-e580-4c7a-b055-fe53b352d45c",
+                  "_resource_id": "f85845a3-e580-4c7a-b055-fe53b352d45c",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default READ",
+                  "path": "/MIAX Sapphire Options/Trade Corrections/Default/Default READ"
+                },
+                {
+                  "_pulumi_import_id": "MFP-QA1/3560be35-ca5f-424e-8816-02315f2199f8",
+                  "_resource_id": "3560be35-ca5f-424e-8816-02315f2199f8",
+                  "_resource_type": "keycloak.Group",
+                  "order": 3,
+                  "parent_group_name": "Default",
+                  "name": "Default WRITE",
+                  "path": "/MIAX Sapphire Options/Trade Corrections/Default/Default WRITE"
+                }
+              ]
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/e6d9649e-55a3-4e9f-b99a-609ac7a58e1e",
+              "_resource_id": "e6d9649e-55a3-4e9f-b99a-609ac7a58e1e",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections READ",
+              "path": "/MIAX Sapphire Options/Trade Corrections/Trade Corrections READ"
+            },
+            {
+              "_pulumi_import_id": "MFP-QA1/3f9060d5-9db8-47d4-9d19-deec3da97cc2",
+              "_resource_id": "3f9060d5-9db8-47d4-9d19-deec3da97cc2",
+              "_resource_type": "keycloak.Group",
+              "order": 2,
+              "parent_group_name": "Trade Corrections",
+              "name": "Trade Corrections WRITE",
+              "path": "/MIAX Sapphire Options/Trade Corrections/Trade Corrections WRITE"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
-

@@ -1,0 +1,23 @@
+# UBI 8: packages updated/upgraded and a Development-Tools-equivalent toolchain.
+#
+# Red Hat UBI repos do not ship dnf group definitions, so `dnf groupinstall "Development Tools"`
+# is not available. These packages match the usual intent (compile, debug, build RPMs, cmake, git).
+# Tools such as flex/bison are not in UBI; add EPEL or install from source if you need them.
+FROM registry.access.redhat.com/ubi8/ubi:latest
+
+USER root
+
+RUN dnf -y update \
+    && dnf -y upgrade \
+    && dnf -y install \
+        gcc gcc-c++ make \
+        autoconf automake libtool \
+        binutils \
+        pkgconf-pkg-config \
+        gdb patch diffutils gettext \
+        redhat-rpm-config rpm-build \
+        strace cmake git \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf /var/cache/yum
+
+CMD ["/bin/bash"]

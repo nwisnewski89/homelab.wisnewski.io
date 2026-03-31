@@ -1,0 +1,103 @@
+direction: right
+
+title: "Prod / NonProd + Egress VPC Network Layout"
+
+internet: "Internet"
+s3: "S3 Gateway Endpoint\n(pl-xxxx-s3)"
+dynamo: "DynamoDB Gateway Endpoint\n(pl-xxxx-dynamodb)"
+
+prod: {
+  label: "Prod Workload VPC\n172.18.0.0/16"
+
+  prod_public_a: "Public Subnet A\nus-east-1a\n172.18.32.0/20"
+  prod_public_b: "Public Subnet B\nus-east-1b\n172.18.48.0/20"
+
+  prod_private_iso_a: "Private Isolated Workload A\nus-east-1a"
+  prod_private_iso_b: "Private Isolated Workload B\nus-east-1b"
+
+  prod_vpce_a: "VPCE Subnet A\nus-east-1a\n172.18.4.0/22"
+  prod_vpce_b: "VPCE Subnet B\nus-east-1b\n172.18.19.0/22"
+
+  prod_new_wl_a: "New Workload Subnet A\nus-east-1a\n172.18.64.0/20"
+  prod_new_wl_b: "New Workload Subnet B\nus-east-1b\n172.18.80.0/20"
+}
+
+nonprod: {
+  label: "NonProd Workload VPC\n172.17.0.0/16"
+
+  np_public_a: "Public Subnet A\nus-east-1a\n172.17.32.0/20"
+  np_public_b: "Public Subnet B\nus-east-1b\n172.17.48.0/20"
+
+  np_private_iso_a: "Private Isolated Workload A\nus-east-1a"
+  np_private_iso_b: "Private Isolated Workload B\nus-east-1b"
+
+  np_vpce_a: "VPCE Subnet A\nus-east-1a\n172.17.4.0/22"
+  np_vpce_b: "VPCE Subnet B\nus-east-1b\n172.17.19.0/22"
+
+  np_new_wl_a: "New Workload Subnet A\nus-east-1a\n172.17.64.0/20"
+  np_new_wl_b: "New Workload Subnet B\nus-east-1b\n172.17.80.0/20"
+}
+
+egress: {
+  label: "Egress VPC (Proposed)\n172.19.240.0/21"
+
+  egress_public_a: "Public Subnet A\nus-east-1a\n172.19.240.0/24"
+  egress_public_b: "Public Subnet B\nus-east-1b\n172.19.241.0/24"
+
+  egress_private_a: "Private Subnet A\nus-east-1a\n172.19.242.0/24"
+  egress_private_b: "Private Subnet B\nus-east-1b\n172.19.243.0/24"
+
+  fw_subnet_a: "Network Firewall Subnet A\nus-east-1a\n172.19.244.0/25"
+  fw_subnet_b: "Network Firewall Subnet B\nus-east-1b\n172.19.244.128/25"
+
+  nat_a: "NAT GW A"
+  nat_b: "NAT GW B"
+  nfw: "AWS Network Firewall\nendpoint per AZ"
+}
+
+prod_public_a -> internet: "0.0.0.0/0 via IGW"
+prod_public_b -> internet: "0.0.0.0/0 via IGW"
+np_public_a -> internet: "0.0.0.0/0 via IGW"
+np_public_b -> internet: "0.0.0.0/0 via IGW"
+
+prod_public_a -> s3: "pl-s3 route"
+prod_public_a -> dynamo: "pl-dynamodb route"
+prod_public_b -> s3: "pl-s3 route"
+prod_public_b -> dynamo: "pl-dynamodb route"
+prod_private_iso_a -> s3: "pl-s3 route"
+prod_private_iso_a -> dynamo: "pl-dynamodb route"
+prod_private_iso_b -> s3: "pl-s3 route"
+prod_private_iso_b -> dynamo: "pl-dynamodb route"
+
+np_public_a -> s3: "pl-s3 route"
+np_public_a -> dynamo: "pl-dynamodb route"
+np_public_b -> s3: "pl-s3 route"
+np_public_b -> dynamo: "pl-dynamodb route"
+np_private_iso_a -> s3: "pl-s3 route"
+np_private_iso_a -> dynamo: "pl-dynamodb route"
+np_private_iso_b -> s3: "pl-s3 route"
+np_private_iso_b -> dynamo: "pl-dynamodb route"
+
+egress_public_a -> internet: "0.0.0.0/0 via IGW"
+egress_public_b -> internet: "0.0.0.0/0 via IGW"
+
+egress_private_a -> nat_a: "0.0.0.0/0"
+egress_private_b -> nat_b: "0.0.0.0/0"
+nat_a -> egress_public_a: "in AZ-a"
+nat_b -> egress_public_b: "in AZ-b"
+egress_private_a -> nfw: "inspection path"
+egress_private_b -> nfw: "inspection path"
+nfw -> internet: "allow/deny egress"
+
+prod_to_egress: "VPC Peering\npcx-prod-egress"
+np_to_egress: "VPC Peering\npcx-nonprod-egress"
+
+prod -> prod_to_egress
+egress -> prod_to_egress
+nonprod -> np_to_egress
+egress -> np_to_egress
+
+prod_new_wl_a -> prod_to_egress: "add route 0.0.0.0/0 -> pcx-prod-egress"
+prod_new_wl_b -> prod_to_egress: "add route 0.0.0.0/0 -> pcx-prod-egress"
+np_new_wl_a -> np_to_egress: "add route 0.0.0.0/0 -> pcx-nonprod-egress"
+np_new_wl_b -> np_to_egress: "add route 0.0.0.0/0 -> pcx-nonprod-egress"

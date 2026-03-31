@@ -8,6 +8,7 @@ dynamo: "DynamoDB Gateway Endpoint\n(pl-xxxx-dynamodb)"
 
 prod: {
   label: "Prod Workload VPC\n172.18.0.0/16"
+  icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/VPC.png"
 
   prod_public_a: "Public Subnet A\nus-east-1a\n172.18.32.0/20"
   prod_public_b: "Public Subnet B\nus-east-1b\n172.18.48.0/20"
@@ -24,6 +25,7 @@ prod: {
 
 nonprod: {
   label: "NonProd Workload VPC\n172.17.0.0/16"
+  icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/VPC.png"
 
   np_public_a: "Public Subnet A\nus-east-1a\n172.17.32.0/20"
   np_public_b: "Public Subnet B\nus-east-1b\n172.17.48.0/20"
@@ -40,6 +42,7 @@ nonprod: {
 
 egress: {
   label: "Egress VPC (Proposed)\n172.19.240.0/21"
+  icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/VPC.png"
 
   egress_public_a: "Public Subnet A\nus-east-1a\n172.19.240.0/24"
   egress_public_b: "Public Subnet B\nus-east-1b\n172.19.241.0/24"
@@ -53,6 +56,9 @@ egress: {
   nat_a: "NAT GW A"
   nat_b: "NAT GW B"
   nfw: "AWS Network Firewall\nendpoint per AZ"
+
+  nat_a.icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/NATGateway.png"
+  nat_b.icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/NATGateway.png"
 }
 
 prod_public_a -> internet: "0.0.0.0/0 via IGW"
@@ -91,6 +97,8 @@ nfw -> internet: "allow/deny egress"
 
 prod_to_egress: "VPC Peering\npcx-prod-egress"
 np_to_egress: "VPC Peering\npcx-nonprod-egress"
+prod_to_egress.icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/VPCPeeringConnection.png"
+np_to_egress.icon: "https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v20.0/dist/NetworkingContentDelivery/VPCPeeringConnection.png"
 
 prod -> prod_to_egress
 egress -> prod_to_egress
@@ -101,3 +109,24 @@ prod_new_wl_a -> prod_to_egress: "add route 0.0.0.0/0 -> pcx-prod-egress"
 prod_new_wl_b -> prod_to_egress: "add route 0.0.0.0/0 -> pcx-prod-egress"
 np_new_wl_a -> np_to_egress: "add route 0.0.0.0/0 -> pcx-nonprod-egress"
 np_new_wl_b -> np_to_egress: "add route 0.0.0.0/0 -> pcx-nonprod-egress"
+
+route_tables: {
+  label: "Route Tables (Key Entries)"
+
+  prod_rt: "| Prod New Workload RT |\n| destination     | target              |\n| 172.18.0.0/16   | local               |\n| pl-s3           | vpce (gateway)      |\n| pl-dynamodb     | vpce (gateway)      |\n| 0.0.0.0/0       | pcx-prod-egress     |"
+
+  nonprod_rt: "| NonProd New Workload RT |\n| destination     | target                 |\n| 172.17.0.0/16   | local                  |\n| pl-s3           | vpce (gateway)         |\n| pl-dynamodb     | vpce (gateway)         |\n| 0.0.0.0/0       | pcx-nonprod-egress     |"
+
+  egress_private_rt: "| Egress Private RT |\n| destination     | target                 |\n| 172.19.240.0/21 | local                  |\n| 172.18.0.0/16   | pcx-prod-egress        |\n| 172.17.0.0/16   | pcx-nonprod-egress     |\n| 0.0.0.0/0       | nat-gw-per-az          |"
+
+  egress_public_rt: "| Egress Public RT |\n| destination     | target                 |\n| 172.19.240.0/21 | local                  |\n| 0.0.0.0/0       | igw                    |"
+}
+
+prod_new_wl_a -> route_tables.prod_rt: "associated"
+prod_new_wl_b -> route_tables.prod_rt: "associated"
+np_new_wl_a -> route_tables.nonprod_rt: "associated"
+np_new_wl_b -> route_tables.nonprod_rt: "associated"
+egress_private_a -> route_tables.egress_private_rt: "associated"
+egress_private_b -> route_tables.egress_private_rt: "associated"
+egress_public_a -> route_tables.egress_public_rt: "associated"
+egress_public_b -> route_tables.egress_public_rt: "associated"

@@ -1,0 +1,139 @@
+<mxfile host="app.diagrams.net" modified="2026-04-01T12:00:00.000Z" agent="Mozilla/5.0" version="24.7.5" type="device">
+  <diagram id="workload-egress-network" name="Page-1">
+    <mxGraphModel dx="1600" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2200" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Hub-and-Spoke Egress with AWS Transit Gateway + AWS Network Firewall" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=20;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="20" y="20" width="1200" height="30" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="internet" value="Internet" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="980" y="70" width="120" height="60" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="tgw" value="AWS Transit Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="880" y="300" width="220" height="70" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="prod_vpc" value="Prod Workload VPC&#xa;172.18.0.0/16" style="swimlane;html=1;rounded=1;fillColor=#f8cecc;strokeColor=#b85450;startSize=28;" vertex="1" parent="1">
+          <mxGeometry x="80" y="180" width="500" height="360" as="geometry"/>
+        </mxCell>
+        <mxCell id="prod_pub_a" value="Public Subnet A&#xa;172.18.32.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="prod_vpc">
+          <mxGeometry x="20" y="50" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="prod_pub_b" value="Public Subnet B&#xa;172.18.48.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="prod_vpc">
+          <mxGeometry x="260" y="50" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="prod_priv_a" value="Private Workload A&#xa;172.18.64.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="prod_vpc">
+          <mxGeometry x="20" y="170" width="210" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="prod_priv_b" value="Private Workload B&#xa;172.18.80.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="prod_vpc">
+          <mxGeometry x="260" y="170" width="210" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="nonprod_vpc" value="NonProd Workload VPC&#xa;172.17.0.0/16" style="swimlane;html=1;rounded=1;fillColor=#d5e8d4;strokeColor=#82b366;startSize=28;" vertex="1" parent="1">
+          <mxGeometry x="80" y="600" width="500" height="360" as="geometry"/>
+        </mxCell>
+        <mxCell id="np_pub_a" value="Public Subnet A&#xa;172.17.32.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="nonprod_vpc">
+          <mxGeometry x="20" y="50" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="np_pub_b" value="Public Subnet B&#xa;172.17.48.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="nonprod_vpc">
+          <mxGeometry x="260" y="50" width="210" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="np_priv_a" value="Private Workload A&#xa;172.17.64.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="nonprod_vpc">
+          <mxGeometry x="20" y="170" width="210" height="90" as="geometry"/>
+        </mxCell>
+        <mxCell id="np_priv_b" value="Private Workload B&#xa;172.17.80.0/20" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="nonprod_vpc">
+          <mxGeometry x="260" y="170" width="210" height="90" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="egress_vpc" value="Egress / Inspection VPC&#xa;172.19.240.0/21" style="swimlane;html=1;rounded=1;fillColor=#f5f5f5;strokeColor=#666666;startSize=28;" vertex="1" parent="1">
+          <mxGeometry x="1250" y="230" width="760" height="520" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_fw_a" value="Firewall Subnet A&#xa;172.19.244.0/25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="25" y="70" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_fw_b" value="Firewall Subnet B&#xa;172.19.244.128/25" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fad7ac;strokeColor=#b46504;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="265" y="70" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="nfw" value="AWS Network Firewall&#xa;(endpoint per AZ)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontStyle=1;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="510" y="70" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_priv_a" value="Private Subnet A&#xa;172.19.242.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="25" y="220" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_priv_b" value="Private Subnet B&#xa;172.19.243.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="265" y="220" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="nat_a" value="NAT Gateway A" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="510" y="220" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="nat_b" value="NAT Gateway B" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="510" y="320" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_pub_a" value="Public Subnet A&#xa;172.19.240.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="25" y="380" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="eg_pub_b" value="Public Subnet B&#xa;172.19.241.0/24" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="265" y="380" width="220" height="80" as="geometry"/>
+        </mxCell>
+        <mxCell id="igw" value="Internet Gateway" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="egress_vpc">
+          <mxGeometry x="510" y="420" width="220" height="40" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="rt_note" value="Spoke private subnet routes:&#xa;0.0.0.0/0 -&gt; TGW attachment&#xa;&#xa;TGW routes:&#xa;0.0.0.0/0 from spokes -&gt; egress VPC attachment&#xa;&#xa;Egress VPC routes:&#xa;from TGW -&gt; Network Firewall endpoint -&gt; NAT GW -&gt; IGW&#xa;&#xa;Use AZ-aware/symmetric routing for stateful inspection." style="shape=note;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+          <mxGeometry x="760" y="780" width="730" height="250" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_prod_priv_a_tgw" value="0.0.0.0/0 -&gt; TGW" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="prod_priv_a" target="tgw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_prod_priv_b_tgw" value="0.0.0.0/0 -&gt; TGW" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="prod_priv_b" target="tgw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_np_priv_a_tgw" value="0.0.0.0/0 -&gt; TGW" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="np_priv_a" target="tgw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_np_priv_b_tgw" value="0.0.0.0/0 -&gt; TGW" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="np_priv_b" target="tgw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_tgw_egress_priv_a" value="to Egress attachment" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="tgw" target="eg_priv_a">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_tgw_egress_priv_b" value="to Egress attachment" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;strokeColor=#6a00ff;" edge="1" parent="1" source="tgw" target="eg_priv_b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_eg_priv_a_fw" value="inspection path" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#b85450;" edge="1" parent="1" source="eg_priv_a" target="nfw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_eg_priv_b_fw" value="inspection path" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#b85450;" edge="1" parent="1" source="eg_priv_b" target="nfw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_fw_nat_a" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#d79b00;" edge="1" parent="1" source="nfw" target="nat_a">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_fw_nat_b" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#d79b00;" edge="1" parent="1" source="nfw" target="nat_b">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_nat_igw" value="0.0.0.0/0" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#82b366;" edge="1" parent="1" source="nat_a" target="igw">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_igw_internet" value="egress to Internet" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;strokeColor=#82b366;" edge="1" parent="1" source="igw" target="internet">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="e_prod_pub_inet" value="direct IGW egress (if used)" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=block;strokeColor=#999999;" edge="1" parent="1" source="prod_pub_a" target="internet">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="e_np_pub_inet" value="direct IGW egress (if used)" style="edgeStyle=orthogonalEdgeStyle;html=1;dashed=1;endArrow=block;strokeColor=#999999;" edge="1" parent="1" source="np_pub_a" target="internet">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

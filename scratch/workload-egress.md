@@ -1,19 +1,42 @@
 # Network flow (centralized egress via GWLB + FortiGate)
+
+The VPC diagram uses **three subnet roles per AZ**: GWLBE (endpoint ENIs), Geneve/GWLB targets (FortiGate inspection leg), and FortiGate egress (public ENI + SNAT to IGW).
+
+### Subnet layout (per AZ)
+
+| Role | AZ a (example CIDR) | AZ b (example CIDR) |
+|------|---------------------|---------------------|
+| Gateway Load Balancer Endpoint (GWLBE) | 172.17.12.0/24 | 172.17.104.0/24 |
+| GWLB + FortiGate Geneve targets | 172.17.13.0/24 | 172.17.105.0/24 |
+| FortiGate egress (public ENI) | 172.17.14.0/24 | 172.17.106.0/24 |
+
+Associate **gwlbe-endpoint-route-table** with GWLBE subnets, **fortigate-geneve-route-table** with Geneve subnets, and **fortigate-egress-route-table** with FortiGate egress subnets.
+
 ### Outbound (workload → Internet)
-1. A workload in a subnet using private-egress-route table (for example 172.17.80.0/20 or 172.17.96.0/20) sends traffic destined outside the VPC.
-2. The subnet’s route table sends 0.0.0.0/0 to a Gateway Load Balancer Endpoint (GWLBE) in that VPC (consumer endpoint for the GWLB service).
-3. The GWLBE sends traffic to the GWLB, which load-balances across FortiGate instances registered as Geneve targets.
-4. FortiGate receives encapsulated flows on its “private” / inspection side (Geneve from GWLB), applies policy (IPS, app control, URL filter, etc.), then forwards permitted traffic out its “public” / egress ENI.
-5. The subnet where that public ENI is attached uses fortigate-egress-route-table: 0.0.0.0/0 → Internet Gateway. FortiGate performs SNAT (replacing NAT Gateway for this path) so return traffic comes back to the firewall’s public address.
-6. Traffic leaves the VPC through the IGW to the Internet.
+
+1. A workload in a subnet using **private-egress-route-table** (for example 172.17.80.0/20 or 172.17.96.0/20) sends traffic destined outside the VPC.
+2. That route table sends **0.0.0.0/0** to the **Gateway Load Balancer Endpoint** object; the endpoint’s ENIs live in the **GWLBE subnets**.
+3. The GWLBE sends traffic to **GWLB**, which load-balances across **FortiGate** instances registered as **Geneve** targets in the **Geneve subnets**.
+4. FortiGate decapsulates on the Geneve leg, applies policy, then forwards permitted traffic out its **egress ENI** in the **FortiGate egress subnet**.
+5. **fortigate-egress-route-table** on those subnets: **0.0.0.0/0 → Internet Gateway**. FortiGate performs **SNAT** (replacing NAT Gateway for this path).
+6. Traffic leaves the VPC through the **IGW** to the Internet.
+
 ### Return (Internet → same flows)
-7. Return packets hit the IGW and are routed to the FortiGate public ENI (same route table / subnet design as your egress side).
-8. FortiGate reverses SNAT and sends the flow back through the GWLB/Geneve path toward the original workload subnets (symmetric flow handling is part of the GWLB inspection model).
+
+7. Return packets hit the **IGW** and are routed to the FortiGate **egress ENI**.
+8. FortiGate reverses SNAT and returns the flow through the **GWLB / Geneve** path toward the original workload subnets.
+
 ### Other subnets
-* Subnets still on private-route table with only local routes behave as before (no default to inspection).
-* Public subnets still use public-route-table to the IGW for resources that are actually public (bastion, ALB, or FortiGate’s egress ENI if you place it in a public subnet).
 
-## Design note
-In real builds, GWLBE subnets, FortiGate Geneve subnets, and FortiGate public-egress subnets are often separate subnets and route tables even if the diagram keeps one 172.17.12.0/22 “FortiGate + GWLB” box per AZ for space. The logical split is: egress workloads → GWLBE → GWLB → FortiGate (private/Geneve) → FortiGate public ENI → IGW (+ SNAT).
+- Subnets on **private-route-table** with only **local** routes behave as before (no default to inspection).
+- **Public** subnets use **public-route-table** (**0.0.0.0/0 → IGW**) for truly public workloads (bastion, ALB, etc.). FortiGate egress subnets use a **separate** route table with IGW for the firewall leg only.
 
-If you want the drawing to show three subnet types per AZ (GWLBE-only, Geneve target, public egress), say so and we can split the boxes and edges to match.
+### Route table summary
+
+- **private-egress-route-table**: `172.17.0.0/16 → local`; `0.0.0.0/0 → GWLBE`.
+- **gwlbe-endpoint-route-table**: `172.17.0.0/16 → local` (no default internet route on endpoint subnets).
+- **fortigate-geneve-route-table**: `172.17.0.0/16 → local` (Geneve encapsulation from GWLB; refine per Fortinet/AWS guidance if you add asymmetric routing).
+- **fortigate-egress-route-table**: `172.17.0.0/16 → local`; `0.0.0.0/0 → IGW`.
+- **public-route-table**: `172.17.0.0/16 → local`; `0.0.0.0/0 → IGW`.
+
+CIDRs in the table are examples; size and numbering should match your IPAM and AZ pairing.

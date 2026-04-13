@@ -1,0 +1,6 @@
+name: fortigate-fqdn-allow
+description: FortiGate FQDN allow policy (port2 to port1) via Pulumi FortiOS provider
+runtime:
+  name: python
+  options:
+    virtualenv: venv

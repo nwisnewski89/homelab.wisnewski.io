@@ -1,2 +1,31 @@
-pulumi>=3.0.0,<4.0.0
-pulumiverse-fortios>=0.0.6,<1.0.0
+FGTAWS47WMTAUE02 # get router info routing-table all
+Codes: K - kernel, C - connected, S - static, R - RIP, B - BGP
+       O - OSPF, IA - OSPF inter area
+       N1 - OSPF NSSA external type 1, N2 - OSPF NSSA external type 2
+       E1 - OSPF external type 1, E2 - OSPF external type 2
+       i - IS-IS, L1 - IS-IS level-1, L2 - IS-IS level-2, ia - IS-IS inter area
+       V - BGP VPNv4
+       * - candidate default
+
+Routing table for VRF=0
+S*      0.0.0.0/0 [5/0] via 172.17.48.1, port1, [1/0]
+C       172.17.8.0/22 is directly connected, port2
+C       172.17.48.0/20 is directly connected, port1
+
+
+FGTAWS47WMTAUE02 # show firewall policy
+config firewall policy
+    edit 1
+        set name "NAT"
+        set uuid afa2d238-3d9f-51f1-6d48-2af536d300da
+        set srcintf "port2"
+        set dstintf "port1"
+        set action accept
+        set srcaddr "private-subnet-src"
+        set dstaddr "allowed-egress"
+        set schedule "always"
+        set service "ALL"
+        set nat enable
+        set port-preserve disable
+    next
+end

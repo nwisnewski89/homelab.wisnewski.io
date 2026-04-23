@@ -19,3 +19,8 @@ output "dns_soa_record" {
 output "dns_zone_id" {
   value = aws_route53_zone.dns_zone.zone_id
 }
+
+output "cross_account_bucket_name" {
+  value       = length(aws_s3_bucket.cross_account) > 0 ? aws_s3_bucket.cross_account[0].id : null
+  description = "Name of the S3 bucket shared via ACL with another account."
+}

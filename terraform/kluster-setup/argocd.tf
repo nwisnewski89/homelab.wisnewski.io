@@ -74,6 +74,12 @@ resource "helm_release" "argocd" {
         domain: argocd.${var.domain}
       crds:
         keep: false
+      # RBAC: give default role so CLI/token auth gets same permissions as UI session.
+      # Without policy.default, local accounts (e.g. service account for CI) can login but get
+      # "unauthorized" on API/CLI while the UI still works (session uses different path).
+      configs:
+        rbac:
+          policy.default: role:admin
     EOF
   ]
 }

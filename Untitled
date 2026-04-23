@@ -1,0 +1,4 @@
+https://autoize.com/deploy-configure-opnsense-on-aws-or-oci-from-custom-ami-with-public-private-subnets/c
+url -O https://opnsense-mirror.hiho.ch/releases/24.7/OPNsense-24.7-nano-amd64.img.bz2 OPNsense-24.7-nano-amd64.img.bz2
+bzip2 -d OPNsense-24.7-nano-amd64.img.bz2
+aws ec2 import-snapshot --description "OPNsense 24.7" --disk-container "file://containers.json"

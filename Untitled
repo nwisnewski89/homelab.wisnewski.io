@@ -1,37 +1,259 @@
-https://autoize.com/deploy-configure-opnsense-on-aws-or-oci-from-custom-ami-with-public-private-subnets/c
-url -O https://opnsense-mirror.hiho.ch/releases/24.7/OPNsense-24.7-nano-amd64.img.bz2 OPNsense-24.7-nano-amd64.img.bz2
-bzip2 -d OPNsense-24.7-nano-amd64.img.bz2
-aws ec2 import-snapshot --description "OPNsense 24.7" --disk-container "file://containers.json"
+// Jenkinsfile (Declarative) template for a Python monorepo with:
+// - 4 independently versioned setuptools-scm projects
+// - one pipeline
+// - build only changed projects
+// - PR policy: block final versions, force RC preview versions
+// - main policy: compute semver bump and create/push final tags
+// - wheel build then docker image build using wheel as input
+//
+// Assumptions to adapt:
+// - repo has packages/<project>/...
+// - each project has pyproject.toml configured with setuptools-scm tag_regex
+//   e.g. ^proj-a-v(?P<version>\d+\.\d+\.\d+(?:rc\d+)?)$
+// - each project has a Dockerfile that accepts ARG WHEEL_FILE
 
+def PROJECTS = [
+  [name: "proj-a", path: "packages/proj-a", distEnv: "PROJ_A", image: "registry.example.com/proj-a"],
+  [name: "proj-b", path: "packages/proj-b", distEnv: "PROJ_B", image: "registry.example.com/proj-b"],
+  [name: "proj-c", path: "packages/proj-c", distEnv: "PROJ_C", image: "registry.example.com/proj-c"],
+  [name: "proj-d", path: "packages/proj-d", distEnv: "PROJ_D", image: "registry.example.com/proj-d"],
+]
 
-[build-system]
-requires = ["setuptools>=69", "setuptools-scm>=8", "wheel"]
-build-backend = "setuptools.build_meta"
+def changedProjects = []
+def releaseVersions = [:]
+def previewVersions = [:]
 
-[project]
-name = "proj-a"
-dynamic = ["version"]
+@NonCPS
+String normalizeBump(String bumpRaw) {
+  def b = (bumpRaw ?: "patch").toLowerCase()
+  if (!(b in ["major", "minor", "patch"])) {
+    return "patch"
+  }
+  return b
+}
 
-[tool.setuptools_scm]
-# only tags matching this project are used
-tag_regex = "^proj-a-v(?P<version>\\d+\\.\\d+\\.\\d+)$"
-version_scheme = "release-branch-semver"
-local_scheme = "no-local-version"
+@NonCPS
+String bumpSemver(String version, String bumpRaw) {
+  def bump = normalizeBump(bumpRaw)
+  def parts = version.tokenize(".")
+  int major = parts[0] as int
+  int minor = parts[1] as int
+  int patch = parts[2] as int
+  switch (bump) {
+    case "major":
+      major += 1
+      minor = 0
+      patch = 0
+      break
+    case "minor":
+      minor += 1
+      patch = 0
+      break
+    default:
+      patch += 1
+      break
+  }
+  return "${major}.${minor}.${patch}"
+}
 
+String latestFinalTag(String projectName) {
+  String cmd = "git tag --list '${projectName}-v[0-9]*' | rg '^${projectName}-v[0-9]+\\.[0-9]+\\.[0-9]+$' | sort -V | tail -1 || true"
+  return sh(script: cmd, returnStdout: true).trim()
+}
 
-def projPath = "packages/proj-a"
-def distName = "PROJ_A" // normalized distribution name: upper + non-alnum -> _
+String semverFromTag(String tag, String projectName) {
+  if (!tag?.trim()) {
+    return "0.0.0"
+  }
+  return tag.replaceFirst("^${projectName}-v", "")
+}
 
-sh """
-  set -euo pipefail
-  if [ -f "${projPath}/VERSION" ]; then
-    V=\$(tr -d '[:space:]' < "${projPath}/VERSION")
-    export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_${distName}="\$V"
-    echo "Using VERSION file override: \$V"
-  else
-    echo "No VERSION file, using git tag regex"
-  fi
+String decideBumpForProject(String projectName) {
+  // Priority:
+  // 1) explicit env var BUMP_PROJ_A / BUMP_PROJ_B / ...
+  // 2) global env var BUMP_TYPE
+  // 3) patch default
+  String key = "BUMP_" + projectName.toUpperCase().replace("-", "_")
+  String explicit = env[key]
+  return normalizeBump(explicit ?: env.BUMP_TYPE ?: "patch")
+}
 
-  python -m pip install --upgrade pip build
-  python -m build --wheel "${projPath}"
-"""
+pipeline {
+  agent any
+
+  options {
+    timestamps()
+    disableConcurrentBuilds()
+  }
+
+  environment {
+    // Optional: set in Jenkins credentials or globally
+    // REGISTRY_USER = credentials('registry-user')
+    // REGISTRY_PASS = credentials('registry-pass')
+    PYTHONUNBUFFERED = "1"
+  }
+
+  stages {
+    stage("Checkout") {
+      steps {
+        checkout scm
+        sh "git fetch --tags --force"
+      }
+    }
+
+    stage("Detect Changed Projects") {
+      steps {
+        script {
+          String diffRange = env.CHANGE_TARGET ? "origin/${env.CHANGE_TARGET}...HEAD" : "HEAD~1...HEAD"
+          String output = sh(script: "git diff --name-only ${diffRange} || true", returnStdout: true).trim()
+          def changedFiles = output ? output.split("\\n") as List : []
+
+          changedProjects = PROJECTS.findAll { p ->
+            changedFiles.any { f -> f.startsWith("${p.path}/") }
+          }
+
+          if (changedProjects.isEmpty()) {
+            echo "No changed package paths detected. Nothing to build."
+          } else {
+            echo "Changed projects: ${changedProjects*.name.join(', ')}"
+          }
+        }
+      }
+    }
+
+    stage("Resolve Versions + Policy") {
+      when {
+        expression { return !changedProjects.isEmpty() }
+      }
+      steps {
+        script {
+          boolean isPr = (env.CHANGE_ID?.trim() as boolean)
+
+          for (p in changedProjects) {
+            String versionFile = "${p.path}/VERSION"
+            String explicitVersion = sh(
+              script: "[ -f '${versionFile}' ] && tr -d '[:space:]' < '${versionFile}' || true",
+              returnStdout: true
+            ).trim()
+
+            String lastTag = latestFinalTag(p.name)
+            String currentBase = semverFromTag(lastTag, p.name)
+            String bump = decideBumpForProject(p.name)
+            String nextFinal = bumpSemver(currentBase, bump)
+
+            if (isPr) {
+              // PR guard: block explicit final version publish intent
+              if (explicitVersion && (explicitVersion ==~ /^[0-9]+\\.[0-9]+\\.[0-9]+$/)) {
+                error("PR build for ${p.name} cannot use final explicit VERSION (${explicitVersion}). Use rc/dev or remove VERSION file.")
+              }
+
+              // precedence: VERSION file override (if present) else computed next final
+              // then force RC preview for PR safety
+              String base = explicitVersion ?: nextFinal
+              String preview = (base ==~ /^[0-9]+\\.[0-9]+\\.[0-9]+$/) ? "${base}rc${env.BUILD_NUMBER}" : base
+              previewVersions[p.name] = preview
+              releaseVersions[p.name] = nextFinal
+              echo "PR ${p.name}: preview=${preview}, planned_final_on_merge=${nextFinal}"
+            } else {
+              // Main/release branch: VERSION file (if present) takes precedence over tag-derived next
+              String selected = explicitVersion ?: nextFinal
+              if (!(selected ==~ /^[0-9]+\\.[0-9]+\\.[0-9]+$/)) {
+                error("Non-PR build for ${p.name} must resolve to final semver X.Y.Z, got '${selected}'")
+              }
+              releaseVersions[p.name] = selected
+              echo "Main ${p.name}: final=${selected}"
+            }
+          }
+        }
+      }
+    }
+
+    stage("Build Wheels") {
+      when {
+        expression { return !changedProjects.isEmpty() }
+      }
+      steps {
+        script {
+          sh "python3 -m pip install --upgrade pip build setuptools-scm"
+
+          boolean isPr = (env.CHANGE_ID?.trim() as boolean)
+          for (p in changedProjects) {
+            String selectedVersion = isPr ? previewVersions[p.name] : releaseVersions[p.name]
+            sh """
+              set -euo pipefail
+              export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_${p.distEnv}='${selectedVersion}'
+              python3 -m build --wheel '${p.path}'
+            """
+          }
+        }
+      }
+    }
+
+    stage("Tag Final Versions (main only)") {
+      when {
+        allOf {
+          not { changeRequest() }
+          expression { return !changedProjects.isEmpty() }
+        }
+      }
+      steps {
+        script {
+          for (p in changedProjects) {
+            String tag = "${p.name}-v${releaseVersions[p.name]}"
+            String exists = sh(script: "git tag --list '${tag}'", returnStdout: true).trim()
+            if (exists) {
+              error("Tag already exists: ${tag}")
+            }
+
+            sh """
+              set -euo pipefail
+              git tag -a '${tag}' -m 'Release ${p.name} ${releaseVersions[p.name]}'
+              git push origin '${tag}'
+            """
+          }
+        }
+      }
+    }
+
+    stage("Build + Push Images") {
+      when {
+        expression { return !changedProjects.isEmpty() }
+      }
+      steps {
+        script {
+          boolean isPr = (env.CHANGE_ID?.trim() as boolean)
+
+          // Optional login if your registry requires auth:
+          // sh "echo '${env.REGISTRY_PASS}' | docker login -u '${env.REGISTRY_USER}' --password-stdin registry.example.com"
+
+          for (p in changedProjects) {
+            String selectedVersion = isPr ? previewVersions[p.name] : releaseVersions[p.name]
+            String wheel = sh(
+              script: "ls '${p.path}/dist/'*.whl | sort | tail -1",
+              returnStdout: true
+            ).trim()
+
+            String imageTag = "${p.image}:${selectedVersion}"
+            sh """
+              set -euo pipefail
+              docker build -f '${p.path}/Dockerfile' --build-arg WHEEL_FILE='${wheel}' -t '${imageTag}' .
+              docker push '${imageTag}'
+            """
+          }
+        }
+      }
+    }
+  }
+
+  post {
+    always {
+      script {
+        if (!changedProjects.isEmpty()) {
+          echo "Built projects: ${changedProjects*.name.join(', ')}"
+          echo "Preview versions: ${previewVersions}"
+          echo "Release versions: ${releaseVersions}"
+        }
+      }
+    }
+  }
+}

@@ -2,3 +2,36 @@ https://autoize.com/deploy-configure-opnsense-on-aws-or-oci-from-custom-ami-with
 url -O https://opnsense-mirror.hiho.ch/releases/24.7/OPNsense-24.7-nano-amd64.img.bz2 OPNsense-24.7-nano-amd64.img.bz2
 bzip2 -d OPNsense-24.7-nano-amd64.img.bz2
 aws ec2 import-snapshot --description "OPNsense 24.7" --disk-container "file://containers.json"
+
+
+[build-system]
+requires = ["setuptools>=69", "setuptools-scm>=8", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "proj-a"
+dynamic = ["version"]
+
+[tool.setuptools_scm]
+# only tags matching this project are used
+tag_regex = "^proj-a-v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-version"
+
+
+def projPath = "packages/proj-a"
+def distName = "PROJ_A" // normalized distribution name: upper + non-alnum -> _
+
+sh """
+  set -euo pipefail
+  if [ -f "${projPath}/VERSION" ]; then
+    V=\$(tr -d '[:space:]' < "${projPath}/VERSION")
+    export SETUPTOOLS_SCM_PRETEND_VERSION_FOR_${distName}="\$V"
+    echo "Using VERSION file override: \$V"
+  else
+    echo "No VERSION file, using git tag regex"
+  fi
+
+  python -m pip install --upgrade pip build
+  python -m build --wheel "${projPath}"
+"""

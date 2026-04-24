@@ -257,3 +257,49 @@ pipeline {
     }
   }
 }
+
+
+def JOB_NAME = 'my-multibranch'
+def RUN_BUILDS_ON_BRANCH_SCAN = false   // true = allow scan-triggered builds; false = suppress
+def ENABLE_HOURLY_SCAN = true
+
+multibranchPipelineJob(JOB_NAME) {
+  branchSources {
+    branchSource {
+      source {
+        bitbucket {
+          id('my-multibranch-bitbucket-source')
+          repoOwner('my-workspace-or-project')
+          repository('my-repo')
+          credentialsId('bitbucket-creds')
+          // serverUrl('https://bitbucket.example.com') // for Bitbucket Server/DC
+          // traits { ... } // optional branch/PR/tag traits
+        }
+      }
+    }
+  }
+
+  if (ENABLE_HOURLY_SCAN) {
+    triggers {
+      periodicFolderTrigger {
+        interval('1h')
+      }
+    }
+  }
+
+  factory {
+    workflowBranchProjectFactory {
+      scriptPath('Jenkinsfile')
+    }
+  }
+
+  // Suppress builds that are caused by branch indexing/scans.
+  if (!RUN_BUILDS_ON_BRANCH_SCAN) {
+    configure { node ->
+      def props = node / properties
+      props << 'jenkins.branch.NoTriggerBranchProperty' {
+        strategy('INDEXING')
+      }
+    }
+  }
+}

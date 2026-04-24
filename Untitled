@@ -303,3 +303,37 @@ multibranchPipelineJob(JOB_NAME) {
     }
   }
 }
+
+apiVersion: platform.example.io/v1alpha1
+kind: DiscoveryPatterns
+metadata:
+  name: shared-patterns
+spec:
+  gitDirectories:
+    - path: clusters/*/apps/*
+    - path: clusters/*/platform/*
+
+    apiVersion: argoproj.io/v1alpha1
+    kind: ApplicationSet
+    metadata:
+      name: workloads
+    spec:
+      generators:
+        - git:
+            repoURL: https://github.com/your-org/argo-repo.git
+            revision: main
+            directories: []   # replaced by kustomize
+      template:
+        metadata:
+          name: '{{path.basename}}'
+        spec:
+          project: default
+          source:
+            repoURL: https://github.com/your-org/argo-repo.git
+            targetRevision: main
+            path: '{{path.path}}'
+          destination:
+            server: https://kubernetes.default.svc
+            namespace: default
+
+

@@ -337,3 +337,23 @@ spec:
             namespace: default
 
 
+
+
+
+
+
+<nat>
+  <outbound>
+    <rule>
+      <source>
+        <network>10.10.1.0/24</network>
+      </source>
+      <destination>
+        <any>1</any>
+      </destination>
+      <interface>wan</interface>
+      <ipprotocol>inet</ipprotocol>
+    </rule>
+    <mode>hybrid</mode>
+  </outbound>
+</nat>

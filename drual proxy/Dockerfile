@@ -1,12 +1,6 @@
-FROM varnish:stable-alpine
 
-ENV VARNISH_LISTEN_PORT=8080 \
-    VARNISH_VCL=default.vcl \
-    VARNISH_STORAGE=malloc,256m
+envsubst '${BACKEND_HOST} ${BACKEND_PORT}' \
+  < /etc/varnish/default.vcl.template \
+  > /tmp/default.vcl
 
-COPY . /etc/varnish/
-
-EXPOSE 8080
-
-CMD ["sh", "-c", "exec varnishd -F -a :${VARNISH_LISTEN_PORT} -f /etc/varnish/${VARNISH_VCL} -s ${VARNISH_STORAGE}"]
-j
+exec varnishd -F -f /tmp/default.vcl -a :80

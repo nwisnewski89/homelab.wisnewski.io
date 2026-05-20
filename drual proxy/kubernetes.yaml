@@ -6,24 +6,104 @@ metadata:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: drupal-file-proxy-nginx
+  name: drupal-file-proxy-varnish
   namespace: drupal-file-proxy
 data:
-  default.conf.template: |
-    server {
-        listen 8080;
-        server_name ${SERVER_NAME};
+  default.vcl.template: |
+    vcl 4.1;
 
-        location = /healthz {
-            access_log off;
-            return 200 "ok\n";
+    backend s3_media {
+        .host = "127.0.0.1";
+        .port = "8443";
+        .connect_timeout = 5s;
+        .first_byte_timeout = 60s;
+        .between_bytes_timeout = 30s;
+    }
+
+    backend drupal {
+        .host = "__DRUPAL_HOST__";
+        .port = "__DRUPAL_PORT__";
+        .connect_timeout = 5s;
+        .first_byte_timeout = 60s;
+        .between_bytes_timeout = 30s;
+    }
+
+    sub vcl_recv {
+        if (req.url == "/healthz") {
+            return (synth(200, "ok"));
         }
 
-        location ^~ /sites/default/files/ {
-            limit_except GET HEAD {
-                deny all;
+        set req.http.X-Forwarded-Host = req.http.Host;
+
+        if (req.http.X-Forwarded-For) {
+            set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+        } else {
+            set req.http.X-Forwarded-For = client.ip;
+        }
+
+        if (req.url ~ "^/sites/default/files/") {
+            if (req.method != "GET" && req.method != "HEAD") {
+                return (synth(405, "Method not allowed"));
             }
 
+            set req.backend_hint = s3_media;
+            set req.http.Host = "__S3_HOST__";
+            unset req.http.Authorization;
+            unset req.http.Cookie;
+
+            return (hash);
+        }
+
+        set req.backend_hint = drupal;
+        return (pass);
+    }
+
+    sub vcl_backend_response {
+        if (bereq.url ~ "^/sites/default/files/") {
+            unset beresp.http.Set-Cookie;
+            unset beresp.http.x-amz-id-2;
+            unset beresp.http.x-amz-request-id;
+            unset beresp.http.x-amz-server-side-encryption;
+
+            if (beresp.status == 200 || beresp.status == 301 || beresp.status == 302) {
+                set beresp.ttl = 1h;
+                set beresp.grace = 1h;
+                set beresp.http.Cache-Control = "public, max-age=3600";
+                return (deliver);
+            }
+
+            if (beresp.status == 404 || beresp.status == 403) {
+                set beresp.ttl = 5m;
+                set beresp.grace = 10m;
+                set beresp.http.Cache-Control = "public, max-age=300";
+                return (deliver);
+            }
+
+            set beresp.uncacheable = true;
+            set beresp.ttl = 0s;
+            return (deliver);
+        }
+
+        set beresp.uncacheable = true;
+        set beresp.ttl = 0s;
+        return (deliver);
+    }
+
+    sub vcl_deliver {
+        if (req.url ~ "^/sites/default/files/") {
+            if (obj.hits > 0) {
+                set resp.http.X-Cache = "HIT";
+            } else {
+                set resp.http.X-Cache = "MISS";
+            }
+        }
+    }
+  s3-tls-proxy.conf.template: |
+    server {
+        listen 127.0.0.1:8443;
+        server_name _;
+
+        location / {
             proxy_pass https://${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com;
             proxy_set_header Host ${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com;
 
@@ -32,25 +112,8 @@ data:
 
             proxy_set_header Authorization "";
             proxy_set_header Cookie "";
-
-            proxy_hide_header x-amz-id-2;
-            proxy_hide_header x-amz-request-id;
-            proxy_hide_header x-amz-server-side-encryption;
-
             proxy_buffering on;
             proxy_read_timeout 60s;
-
-            expires 1h;
-            add_header Cache-Control "public, max-age=3600" always;
-        }
-
-        location / {
-            proxy_pass http://${DRUPAL_UPSTREAM};
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Host $host;
-            proxy_set_header X-Forwarded-Proto $scheme;
         }
     }
 ---
@@ -72,29 +135,32 @@ spec:
         app.kubernetes.io/name: drupal-file-proxy
     spec:
       containers:
-        - name: nginx
-          image: nginx:1.27-alpine
+        - name: varnish
+          image: varnish:stable-alpine
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8080
           env:
-            - name: SERVER_NAME
-              value: sample.com
             - name: S3_BUCKET
               value: drupal-files-prod
             - name: AWS_REGION
               value: us-east-1
-            - name: DRUPAL_UPSTREAM
-              value: drupal.default.svc.cluster.local:80
+            - name: DRUPAL_HOST
+              value: drupal.default.svc.cluster.local
+            - name: DRUPAL_PORT
+              value: "80"
           command:
             - /bin/sh
             - -c
             - |
-              envsubst '$$SERVER_NAME $$S3_BUCKET $$AWS_REGION $$DRUPAL_UPSTREAM' \
-                < /etc/nginx/templates/default.conf.template \
-                > /etc/nginx/conf.d/default.conf
-              exec nginx -g 'daemon off;'
+              S3_HOST="${S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com"
+              sed \
+                -e "s/__S3_HOST__/${S3_HOST}/g" \
+                -e "s/__DRUPAL_HOST__/${DRUPAL_HOST}/g" \
+                -e "s/__DRUPAL_PORT__/${DRUPAL_PORT}/g" \
+                /etc/varnish/default.vcl.template > /tmp/default.vcl
+              exec varnishd -F -a :8080 -f /tmp/default.vcl -s malloc,256m
           readinessProbe:
             httpGet:
               path: /healthz
@@ -110,19 +176,42 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
+              memory: 128Mi
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: 512Mi
           volumeMounts:
-            - name: nginx-template
-              mountPath: /etc/nginx/templates/default.conf.template
-              subPath: default.conf.template
+            - name: varnish-template
+              mountPath: /etc/varnish/default.vcl.template
+              subPath: default.vcl.template
+              readOnly: true
+        - name: s3-tls-proxy
+          image: nginx:1.27-alpine
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: S3_BUCKET
+              value: drupal-files-prod
+            - name: AWS_REGION
+              value: us-east-1
+          ports:
+            - name: s3-tls
+              containerPort: 8443
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+          volumeMounts:
+            - name: varnish-template
+              mountPath: /etc/nginx/templates/s3-tls-proxy.conf.template
+              subPath: s3-tls-proxy.conf.template
               readOnly: true
       volumes:
-        - name: nginx-template
+        - name: varnish-template
           configMap:
-            name: drupal-file-proxy-nginx
+            name: drupal-file-proxy-varnish
 ---
 apiVersion: v1
 kind: Service

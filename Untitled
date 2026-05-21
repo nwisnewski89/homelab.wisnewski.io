@@ -1,100 +1,16 @@
-<firewall_aliases>
-  <alias name="Allowed_Sites" type="host">
-    <content>
-      ifconfig.me
-      wtfismyip.com
-      google.com
-    </content>
-    <description>Allowed urls</description>
-  </alias>
-</firewall_aliases>
+frontend fe_main
+  bind *:8080   # whatever Ingress sends you (usually HTTP)
+  # Preserve the real client chain from NLB/ALB/Ingress — do NOT overwrite with option forwardfor
+  http-request set-header X-Real-IP %[req.hdr(X-Forwarded-For,1)] if { req.hdr(X-Forwarded-For) -m found }
+  # Tell Keycloak/F5 the original public URL (no :443 in host)
+  http-request set-header X-Forwarded-Proto https
+  http-request set-header X-Forwarded-Port 443
+  http-request set-header X-Forwarded-Host %[req.hdr(host),field(1,:)]
+  # Strip :443 from Host before sending upstream (common root cause of fqdn:443 redirects)
+  http-request set-header Host %[req.hdr(host),field(1,:)]
+  default_backend backend
 
-<firewall_rules>
-  <wan>
-    <rule action="pass" direction="in" protocol="tcp">
-      <source>68.194.23.90/32</source>
-      <destination>(self)</destination>
-      <port>22</port>
-      <description>Allow SSH on WAN</description>
-    </rule>
-
-    <rule action="pass" direction="in" protocol="tcp">
-      <source>68.194.23.90/32</source>
-      <destination>(self)</destination>
-      <port>443</port>
-      <description>Allow HTTPS on WAN</description>
-    </rule>
-  </wan>
-
-  <lan disabled="true">
-    <rule action="pass">
-      <source>lan net</source>
-      <destination>any</destination>
-      <description>Default allow LAN to any rule</description>
-    </rule>
-
-    <rule action="pass" ipprotocol="inet6" disabled="true">
-      <source>lan net</source>
-      <destination>any</destination>
-      <description>Default allow LAN IPv6 to any rule</description>
-    </rule>
-
-    <rule action="pass" direction="in" protocol="udp">
-      <source>lan net</source>
-      <destination>any</destination>
-      <port>53</port>
-      <description>allow DNS</description>
-    </rule>
-
-    <rule action="pass" direction="in" protocol="tcp">
-      <source>lan net</source>
-      <destination>Allowed_Sites</destination>
-      <port>443</port>
-      <description>allow HTTPS to allowed sites only</description>
-    </rule>
-
-    <rule action="block" direction="in">
-      <source>lan net</source>
-      <destination>any</destination>
-      <description>block everything else</description>
-    </rule>
-  </lan>
-
-  <opt1 description="LAN">
-    <rule action="pass" direction="in" protocol="udp">
-      <source>opt1 net</source>
-      <destination>any</destination>
-      <port>53</port>
-      <description>DNS Output</description>
-    </rule>
-
-    <rule action="pass" direction="in" protocol="tcp">
-      <source>opt1 net</source>
-      <destination>Allowed_Sites</destination>
-      <port>443</port>
-    </rule>
-
-    <rule action="pass" direction="in" protocol="tcp">
-      <source>opt1 net</source>
-      <destination>Allowed_Sites</destination>
-      <port>80</port>
-    </rule>
-
-    <rule action="block" direction="in">
-      <source>any</source>
-      <destination>any</destination>
-    </rule>
-  </opt1>
-</firewall_rules>
-
-<nat>
-  <outbound mode="hybrid">
-    <rule>
-      <interface>wan</interface>
-      <ipprotocol>inet</ipprotocol>
-      <source>10.10.1.0/24</source>
-      <destination>any</destination>
-      <translation>wan address</translation>
-    </rule>
-  </outbound>
-</nat>
+backend backend
+  server backend1 x.x.x.x:443 ssl verify required ca-file /etc/ssl/certs/ca-certificates.crt check
+  # Safety net: rewrite any 302/301 Location that still includes :443
+  http-response replace-header Location ^(https?://[^/:]+):443(.*)$ \1\2

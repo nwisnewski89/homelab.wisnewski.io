@@ -2,7 +2,6 @@ frontend fe_main
   bind *:8080   # whatever Ingress sends you (usually HTTP)
   # Preserve the real client chain from NLB/ALB/Ingress — do NOT overwrite with option forwardfor
   http-request set-header X-Real-IP %[req.hdr(X-Forwarded-For,1)] if { req.hdr(X-Forwarded-For) -m found }
-  # Tell Keycloak/F5 the original public URL (no :443 in host)
   http-request set-header X-Forwarded-Proto https
   http-request set-header X-Forwarded-Port 443
   http-request set-header X-Forwarded-Host %[req.hdr(host),field(1,:)]

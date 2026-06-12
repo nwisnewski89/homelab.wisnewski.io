@@ -2,3 +2,5 @@
 *.tfvars
 credentials.json
 argocd.pem
+argocd-accounts.env
+argocd-account-secrets.yaml

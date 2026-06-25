@@ -8,12 +8,12 @@ This stack adds:
 3. Optional S3 logging via WafLoggingIntegration from waf-v2-logging-integration.py
 
 Rule evaluation order (lower priority number runs first):
-  10  Bot Control managed rule group (labels bots; blocks unverified crawlers)
-  20  Block verified Googlebot (custom label match)
-  21  Block verified search-engine / SEO bots (optional, broader block)
+  10  Bot Control managed rule group (blocks unverified bots by default)
+  20  Block verified search-engine bots on matching hostnames only
+      (Googlebot + search_engine + seo labels, combined with Host header match)
 
 Usage:
-    cdk deploy -c domain=wisnewski.io WafBotControlStack
+    cdk deploy -c no_index_hostnames=admin.example.com,internal.example.com WafBotControlStack
 
     # Attach to an existing ALB
     cdk deploy -c alb_arn=arn:aws:elasticloadbalancing:... WafBotControlStack
@@ -24,7 +24,7 @@ from __future__ import annotations
 import importlib.util
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Sequence
 
 from aws_cdk import (
     CfnOutput,
@@ -52,19 +52,21 @@ LABEL_GOOGLEBOT = "awswaf:managed:aws:bot-control:bot:name:googlebot"
 LABEL_CATEGORY_SEARCH_ENGINE = "awswaf:managed:aws:bot-control:bot:category:search_engine"
 LABEL_CATEGORY_SEO = "awswaf:managed:aws:bot-control:bot:category:seo"
 
+HostnameMatchType = Literal["EXACTLY", "STARTS_WITH", "ENDS_WITH", "CONTAINS"]
+
 
 @dataclass(frozen=True)
 class WafBotControlConfig:
     """Configuration for the Bot Control Web ACL."""
 
     name: str = "BotControlWebACL"
-    description: str = "Block SEO/indexing bots via Bot Control and custom label rules"
+    description: str = "Block bots by default; block search-engine bots only on selected hostnames"
     scope: WafScope = "REGIONAL"
     inspection_level: BotControlInspectionLevel = "COMMON"
     enable_machine_learning: bool = False
     bot_control_count_mode: bool = False
-    block_googlebot: bool = True
-    block_all_search_engine_bots: bool = False
+    no_index_hostnames: Sequence[str] = ()
+    hostname_match_type: HostnameMatchType = "EXACTLY"
     enable_s3_logging: bool = True
     log_prefix: str = "bot-control-waf-logs"
     associate_resource_arn: str | None = None
@@ -123,14 +125,92 @@ def create_bot_control_managed_rule(
     )
 
 
-def create_label_block_rule(
+def create_hostname_match_statement(
+    hostname: str,
     *,
-    name: str,
+    match_type: HostnameMatchType = "EXACTLY",
+) -> wafv2.CfnWebACL.StatementProperty:
+    """Match the HTTP Host header against a hostname."""
+    return wafv2.CfnWebACL.StatementProperty(
+        byte_match_statement=wafv2.CfnWebACL.ByteMatchStatementProperty(
+            search_string=hostname,
+            field_to_match=wafv2.CfnWebACL.FieldToMatchProperty(
+                single_header=wafv2.CfnWebACL.SingleHeaderProperty(name="host")
+            ),
+            positional_constraint=match_type,
+            text_transformations=[
+                wafv2.CfnWebACL.TextTransformationProperty(
+                    priority=0,
+                    type="LOWERCASE",
+                )
+            ],
+        )
+    )
+
+
+def create_hostnames_match_statement(
+    hostnames: Sequence[str],
+    *,
+    match_type: HostnameMatchType = "EXACTLY",
+) -> wafv2.CfnWebACL.StatementProperty:
+    """Match if the Host header matches any hostname in the list."""
+    if not hostnames:
+        raise ValueError("At least one hostname is required")
+
+    if len(hostnames) == 1:
+        return create_hostname_match_statement(hostnames[0], match_type=match_type)
+
+    return wafv2.CfnWebACL.StatementProperty(
+        or_statement=wafv2.CfnWebACL.OrStatementProperty(
+            statements=[
+                create_hostname_match_statement(hostname, match_type=match_type)
+                for hostname in hostnames
+            ]
+        )
+    )
+
+
+def create_search_engine_bot_labels_statement() -> wafv2.CfnWebACL.StatementProperty:
+    """Match verified Googlebot or bots in the search_engine / seo categories."""
+    return wafv2.CfnWebACL.StatementProperty(
+        or_statement=wafv2.CfnWebACL.OrStatementProperty(
+            statements=[
+                wafv2.CfnWebACL.StatementProperty(
+                    label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
+                        scope="LABEL",
+                        key=LABEL_GOOGLEBOT,
+                    )
+                ),
+                wafv2.CfnWebACL.StatementProperty(
+                    label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
+                        scope="LABEL",
+                        key=LABEL_CATEGORY_SEARCH_ENGINE,
+                    )
+                ),
+                wafv2.CfnWebACL.StatementProperty(
+                    label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
+                        scope="LABEL",
+                        key=LABEL_CATEGORY_SEO,
+                    )
+                ),
+            ]
+        )
+    )
+
+
+def create_hostname_scoped_search_engine_block_rule(
+    *,
     priority: int,
-    label_key: str,
+    hostnames: Sequence[str],
+    match_type: HostnameMatchType = "EXACTLY",
     count_mode: bool = False,
 ) -> wafv2.CfnWebACL.RuleProperty:
-    """Block (or count) requests that match a Bot Control label."""
+    """
+    Block verified search-engine bots only when the Host header matches.
+
+    Logic: (Googlebot OR search_engine category OR seo category) AND hostname match.
+    Unverified bots are still blocked earlier by the Bot Control managed rule group.
+    """
     action = (
         wafv2.CfnWebACL.RuleActionProperty(count={})
         if count_mode
@@ -138,54 +218,18 @@ def create_label_block_rule(
     )
 
     return wafv2.CfnWebACL.RuleProperty(
-        name=name,
+        name="BlockSearchEngineBotsOnHostname",
         priority=priority,
         action=action,
         statement=wafv2.CfnWebACL.StatementProperty(
-            label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
-                scope="LABEL",
-                key=label_key,
-            )
-        ),
-        visibility_config=_visibility_config(name),
-    )
-
-
-def create_block_search_engine_bots_rule(
-    *,
-    priority: int,
-    count_mode: bool = False,
-) -> wafv2.CfnWebACL.RuleProperty:
-    """Block verified bots in the search_engine and seo Bot Control categories."""
-    action = (
-        wafv2.CfnWebACL.RuleActionProperty(count={})
-        if count_mode
-        else wafv2.CfnWebACL.RuleActionProperty(block={})
-    )
-
-    return wafv2.CfnWebACL.RuleProperty(
-        name="BlockVerifiedSearchEngineAndSeoBots",
-        priority=priority,
-        action=action,
-        statement=wafv2.CfnWebACL.StatementProperty(
-            or_statement=wafv2.CfnWebACL.OrStatementProperty(
+            and_statement=wafv2.CfnWebACL.AndStatementProperty(
                 statements=[
-                    wafv2.CfnWebACL.StatementProperty(
-                        label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
-                            scope="LABEL",
-                            key=LABEL_CATEGORY_SEARCH_ENGINE,
-                        )
-                    ),
-                    wafv2.CfnWebACL.StatementProperty(
-                        label_match_statement=wafv2.CfnWebACL.LabelMatchStatementProperty(
-                            scope="LABEL",
-                            key=LABEL_CATEGORY_SEO,
-                        )
-                    ),
+                    create_hostnames_match_statement(hostnames, match_type=match_type),
+                    create_search_engine_bot_labels_statement(),
                 ]
             )
         ),
-        visibility_config=_visibility_config("BlockVerifiedSearchEngineAndSeoBots"),
+        visibility_config=_visibility_config("BlockSearchEngineBotsOnHostname"),
     )
 
 
@@ -194,7 +238,7 @@ def build_bot_control_web_acl_rules(
     *,
     start_priority: int = 10,
 ) -> list[wafv2.CfnWebACL.RuleProperty]:
-    """Build Bot Control and custom indexing-bot block rules."""
+    """Build Bot Control and hostname-scoped search-engine bot block rules."""
     rules: list[wafv2.CfnWebACL.RuleProperty] = []
     priority = start_priority
 
@@ -208,21 +252,12 @@ def build_bot_control_web_acl_rules(
     )
     priority += 1
 
-    if config.block_googlebot:
+    if config.no_index_hostnames:
         rules.append(
-            create_label_block_rule(
-                name="BlockGooglebot",
+            create_hostname_scoped_search_engine_block_rule(
                 priority=priority,
-                label_key=LABEL_GOOGLEBOT,
-                count_mode=config.bot_control_count_mode,
-            )
-        )
-        priority += 1
-
-    if config.block_all_search_engine_bots:
-        rules.append(
-            create_block_search_engine_bots_rule(
-                priority=priority,
+                hostnames=config.no_index_hostnames,
+                match_type=config.hostname_match_type,
                 count_mode=config.bot_control_count_mode,
             )
         )
@@ -234,8 +269,8 @@ class WafBotControlStack(Stack):
     """
     CDK stack that provisions a WAF v2 Web ACL with Bot Control and indexing-bot blocks.
 
-    Bot Control must run before the custom label rules so labels are present when the
-    block rules are evaluated.
+    Bot Control blocks unverified bots globally. Verified search-engine bots are only
+    blocked on hostnames listed in config.no_index_hostnames.
     """
 
     def __init__(
@@ -295,6 +330,13 @@ class WafBotControlStack(Stack):
 # ---------------------------------------------------------------------------
 # Example CDK app entry point
 # ---------------------------------------------------------------------------
+def _hostnames_from_context(app) -> list[str]:
+    raw = app.node.try_get_context("no_index_hostnames") or ""
+    if isinstance(raw, list):
+        return [hostname.strip() for hostname in raw if str(hostname).strip()]
+    return [hostname.strip() for hostname in str(raw).split(",") if hostname.strip()]
+
+
 if __name__ == "__main__":
     from aws_cdk import App
 
@@ -309,7 +351,8 @@ if __name__ == "__main__":
             name=app.node.try_get_context("waf_name") or "BotControlWebACL",
             scope=app.node.try_get_context("waf_scope") or "REGIONAL",
             bot_control_count_mode=app.node.try_get_context("count_mode") == "true",
-            block_all_search_engine_bots=app.node.try_get_context("block_all_search_bots") == "true",
+            no_index_hostnames=_hostnames_from_context(app),
+            hostname_match_type=app.node.try_get_context("hostname_match_type") or "EXACTLY",
             associate_resource_arn=alb_arn,
         ),
     )

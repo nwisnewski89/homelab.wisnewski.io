@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: redis-drupal
-  labels:
-    app.kubernetes.io/name: redis-drupal
-    app.kubernetes.io/component: cache

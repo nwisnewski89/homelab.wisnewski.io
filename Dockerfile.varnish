@@ -1,0 +1,22 @@
+# Dockerfile.varnish-exporter
+FROM varnish:8-alpine
+
+ARG EXPORTER_VERSION=1.8.3
+
+# Map Docker arch names to GitHub release asset names
+RUN set -eux; \
+    apk add --no-cache curl; \
+    arch="$(uname -m)"; \
+    case "$arch" in \
+      x86_64)  asset_arch="x86_64" ;; \
+      aarch64) asset_arch="arm64" ;; \
+      *) echo "unsupported arch: $arch"; exit 1 ;; \
+    esac; \
+    curl -fsSL \
+      "https://github.com/otto-de/prometheus_varnish_exporter/releases/download/v${EXPORTER_VERSION}/prometheus-varnish-exporter_Linux_${asset_arch}.tar.gz" \
+      | tar xz -C /usr/local/bin prometheus-varnish-exporter; \
+    apk del curl; \
+    chmod +x /usr/local/bin/prometheus-varnish-exporter
+
+EXPOSE 9131
+ENTRYPOINT ["/usr/local/bin/prometheus-varnish-exporter"]

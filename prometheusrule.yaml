@@ -59,6 +59,45 @@ spec:
               Pod {{ $labels.pod }} in {{ $labels.namespace }} is failing backend connections
               at {{ $value | humanize }} /s. Check Drupal readiness and Varnish backend host/port.
 
+        - alert: VarnishBackendFail
+          expr: |
+            sum by (namespace, backend) (rate(varnish_backend_fail{job="varnish"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Varnish backend {{ $labels.backend }} failing opens ({{ $labels.namespace }})
+            description: |
+              Backend {{ $labels.backend }} in namespace {{ $labels.namespace }} is failing
+              connection opens at {{ $value | humanize }} /s (varnish_backend_fail).
+              See refused/timeout alerts for the specific errno breakdown.
+
+        - alert: VarnishBackendConnectionRefused
+          expr: |
+            sum by (namespace, backend) (rate(varnish_backend_fail_econnrefused{job="varnish"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Varnish backend {{ $labels.backend }} connection refused ({{ $labels.namespace }})
+            description: |
+              Backend {{ $labels.backend }} in namespace {{ $labels.namespace }} is returning
+              ECONNREFUSED at {{ $value | humanize }} /s. Drupal may be down, not listening,
+              or the Varnish backend host/port is wrong.
+
+        - alert: VarnishBackendConnectionTimeout
+          expr: |
+            sum by (namespace, backend) (rate(varnish_backend_fail_etimedout{job="varnish"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: Varnish backend {{ $labels.backend }} connection timeout ({{ $labels.namespace }})
+            description: |
+              Backend {{ $labels.backend }} in namespace {{ $labels.namespace }} is hitting
+              ETIMEDOUT at {{ $value | humanize }} /s. Drupal may be overloaded, network
+              path blocked, or connect_timeout too aggressive.
+
         - alert: VarnishBackendNotAttempted
           expr: |
             sum by (namespace, pod) (rate(varnish_main_backend_unhealthy{job="varnish"}[5m])) > 0

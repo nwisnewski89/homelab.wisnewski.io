@@ -1,0 +1,72 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: varnish
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: varnish
+    app.kubernetes.io/component: cache
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: varnish.rules
+      rules:
+        - alert: VarnishDown
+          expr: varnish_up{job="varnish"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Varnish exporter scrape failed ({{ $labels.namespace }}/{{ $labels.pod }})
+            description: |
+              prometheus_varnish_exporter cannot read varnishstat in namespace {{ $labels.namespace }}
+              on pod {{ $labels.pod }}. Varnish may be down or the VSM volume is not shared.
+
+        - alert: VarnishAbsent
+          expr: absent(varnish_up{job="varnish"})
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: No Varnish metrics are being scraped
+            description: |
+              Prometheus has no varnish_up series for job=varnish. Check ServiceMonitor
+              selectors and that each Varnish metrics Service is labeled
+              app.kubernetes.io/name=varnish and app.kubernetes.io/part-of=monitoring.
+
+        - alert: VarnishBackendUnhealthy
+          expr: |
+            sum without (server) (varnish_backend_happy{job="varnish"}) == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: Varnish backend {{ $labels.backend }} is unhealthy ({{ $labels.namespace }})
+            description: |
+              Backend {{ $labels.backend }} in namespace {{ $labels.namespace }} has a zero
+              health bitmap (varnish_backend_happy). Drupal may be unreachable or sick probes
+              are failing.
+
+        - alert: VarnishBackendConnectionFailures
+          expr: |
+            sum by (namespace, pod) (rate(varnish_main_backend_fail{job="varnish"}[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Varnish backend connection failures in {{ $labels.namespace }}
+            description: |
+              Pod {{ $labels.pod }} in {{ $labels.namespace }} is failing backend connections
+              at {{ $value | humanize }} /s. Check Drupal readiness and Varnish backend host/port.
+
+        - alert: VarnishBackendNotAttempted
+          expr: |
+            sum by (namespace, pod) (rate(varnish_main_backend_unhealthy{job="varnish"}[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Varnish skipping unhealthy backend ({{ $labels.namespace }}/{{ $labels.pod }})
+            description: |
+              Varnish is not attempting backend connections because the backend is marked
+              unhealthy. Investigate Drupal health probes and Varnish director/backend config.

@@ -1,0 +1,31 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: varnish
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: varnish
+    app.kubernetes.io/component: cache
+    release: kube-prometheus-stack
+spec:
+  # Scrapes every namespace that has a matching metrics Service.
+  # Ensure each Varnish metrics Service has the labels below.
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: varnish
+      app.kubernetes.io/part-of: monitoring
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s
+      path: /metrics
+      scheme: http
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - targetLabel: job
+          replacement: varnish

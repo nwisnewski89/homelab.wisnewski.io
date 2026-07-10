@@ -1,0 +1,247 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: varnish-dashboard
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/name: varnish
+    app.kubernetes.io/component: cache
+  annotations:
+    grafana_dashboard_folder: Varnish
+data:
+  varnish-dashboard.json: |
+    {
+      "annotations": {
+        "list": [
+          {
+            "builtIn": 1,
+            "datasource": { "type": "grafana", "uid": "-- Grafana --" },
+            "enable": true,
+            "hide": true,
+            "iconColor": "rgba(0, 211, 255, 1)",
+            "name": "Annotations & Alerts",
+            "type": "dashboard"
+          }
+        ]
+      },
+      "editable": true,
+      "fiscalYearStartMonth": 0,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "color": { "mode": "thresholds" },
+              "mappings": [
+                { "options": { "0": { "color": "red", "index": 0, "text": "DOWN" } }, "type": "value" },
+                { "options": { "1": { "color": "green", "index": 1, "text": "UP" } }, "type": "value" }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "title": "Varnish Up",
+          "type": "stat",
+          "targets": [{ "expr": "varnish_up{job=\"varnish\", namespace=~\"$namespace\"}", "legendFormat": "{{namespace}}/{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps", "decimals": 2 } },
+          "gridPos": { "h": 4, "w": 3, "x": 3, "y": 0 },
+          "id": 2,
+          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "title": "Client Req/s",
+          "type": "stat",
+          "targets": [{ "expr": "sum(rate(varnish_main_client_req{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "req/s", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0,
+              "max": 1,
+              "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.7 }, { "color": "green", "value": 0.9 }] }
+            }
+          },
+          "gridPos": { "h": 4, "w": 3, "x": 6, "y": 0 },
+          "id": 3,
+          "options": { "colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "title": "Hit Ratio",
+          "type": "stat",
+          "targets": [{
+            "expr": "sum(rate(varnish_main_cache_hit{job=\"varnish\", namespace=~\"$namespace\"}[5m])) / clamp_min(sum(rate(varnish_main_cache_hit{job=\"varnish\", namespace=~\"$namespace\"}[5m]) + rate(varnish_main_cache_miss{job=\"varnish\", namespace=~\"$namespace\"}[5m])), 1e-9)",
+            "legendFormat": "hit ratio",
+            "refId": "A"
+          }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 } },
+          "gridPos": { "h": 4, "w": 3, "x": 9, "y": 0 },
+          "id": 4,
+          "options": { "colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false }, "textMode": "auto" },
+          "title": "Active Pipes",
+          "type": "stat",
+          "targets": [{ "expr": "sum(varnish_main_n_pipe{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "pipes", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "Bps" } },
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 },
+          "id": 5,
+          "title": "Backend Response",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace, backend) (rate(varnish_backend_beresp_bodybytes{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "body {{namespace}}/{{backend}}", "refId": "A" },
+            { "expr": "sum by (namespace, backend) (rate(varnish_backend_beresp_hdrbytes{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "hdr {{namespace}}/{{backend}}", "refId": "B" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "id": 7,
+          "title": "Client Requests / sec",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum by (namespace) (rate(varnish_main_client_req{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "{{namespace}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "id": 8,
+          "title": "Cache Hits vs Misses / sec",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace) (rate(varnish_main_cache_hit{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "hit {{namespace}}", "refId": "A" },
+            { "expr": "sum by (namespace) (rate(varnish_main_cache_miss{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "miss {{namespace}}", "refId": "B" },
+            { "expr": "sum by (namespace) (rate(varnish_main_cache_hitpass{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "hitpass {{namespace}}", "refId": "C" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "id": 9,
+          "title": "Sessions — Accept Rate & Active Pipes",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace) (rate(varnish_main_sess_conn{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "accept/s {{namespace}}", "refId": "A" },
+            { "expr": "sum by (namespace) (varnish_main_n_pipe{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "active pipes {{namespace}}", "refId": "B" },
+            { "expr": "sum by (namespace) (varnish_main_thread_queue_len{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "thread queue {{namespace}}", "refId": "C" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "id": 10,
+          "title": "Session Drops / Overload",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace) (rate(varnish_main_sess_dropped{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "sess dropped {{namespace}}", "refId": "A" },
+            { "expr": "sum by (namespace) (rate(varnish_main_req_dropped{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "req dropped {{namespace}}", "refId": "B" },
+            { "expr": "sum by (namespace) (rate(varnish_main_sess_fail{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "sess fail {{namespace}}", "refId": "C" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "id": 11,
+          "title": "Backend Requests / sec",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace, backend) (rate(varnish_backend_req{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "{{namespace}}/{{backend}}", "refId": "A" },
+            { "expr": "sum by (namespace) (rate(varnish_main_backend_req{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "main {{namespace}}", "refId": "B" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "ops" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "id": 12,
+          "title": "Backend Health — Failures & Unhealthy",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace) (rate(varnish_main_backend_fail{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "fail {{namespace}}", "refId": "A" },
+            { "expr": "sum by (namespace) (rate(varnish_main_backend_unhealthy{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "unhealthy {{namespace}}", "refId": "B" },
+            { "expr": "sum by (namespace) (rate(varnish_main_backend_busy{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "busy {{namespace}}", "refId": "C" },
+            { "expr": "sum by (namespace, backend) (varnish_backend_happy{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "happy {{namespace}}/{{backend}}", "refId": "D" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" } },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 28 },
+          "id": 13,
+          "title": "Cache Storage (SMA)",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace, type) (varnish_sma_g_bytes{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "used {{namespace}}/{{type}}", "refId": "A" },
+            { "expr": "sum by (namespace, type) (varnish_sma_g_space{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "free {{namespace}}/{{type}}", "refId": "B" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "short" } },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 28 },
+          "id": 14,
+          "title": "Objects — Cached / Expired / LRU Nuked",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum by (namespace) (varnish_main_n_object{job=\"varnish\", namespace=~\"$namespace\"})", "legendFormat": "objects {{namespace}}", "refId": "A" },
+            { "expr": "sum by (namespace) (rate(varnish_main_n_expired{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "expired/s {{namespace}}", "refId": "B" },
+            { "expr": "sum by (namespace) (rate(varnish_main_n_lru_nuked{job=\"varnish\", namespace=~\"$namespace\"}[5m]))", "legendFormat": "lru nuked/s {{namespace}}", "refId": "C" }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 39,
+      "tags": ["varnish", "drupal", "cache"],
+      "templating": {
+        "list": [
+          {
+            "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+            "hide": 0,
+            "includeAll": false,
+            "label": "Datasource",
+            "multi": false,
+            "name": "datasource",
+            "options": [],
+            "query": "prometheus",
+            "refresh": 1,
+            "regex": "",
+            "type": "datasource"
+          },
+          {
+            "allValue": ".*",
+            "current": { "selected": true, "text": "All", "value": "$__all" },
+            "datasource": { "type": "prometheus", "uid": "${datasource}" },
+            "definition": "label_values(varnish_up{job=\"varnish\"}, namespace)",
+            "includeAll": true,
+            "label": "Namespace",
+            "multi": true,
+            "name": "namespace",
+            "query": { "query": "label_values(varnish_up{job=\"varnish\"}, namespace)", "refId": "StandardVariableQuery" },
+            "refresh": 2,
+            "regex": "",
+            "sort": 1,
+            "type": "query"
+          }
+        ]
+      },
+      "time": { "from": "now-6h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Varnish",
+      "uid": "varnish-cache",
+      "version": 1
+    }
